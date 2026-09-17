@@ -14,3 +14,6 @@ ref
 gauss_*.tar.gz
 inst/dev-tests/
 .DS_Store
+
+CLAUDE.md
+cluster/
