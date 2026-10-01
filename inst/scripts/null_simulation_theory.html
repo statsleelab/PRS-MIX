@@ -79,23 +79,75 @@ z &lt;- as.vector(crossprod(U, w))</code></pre>
 
 <h2>4. Converting $z$ to a sumstats row</h2>
 
-<p>$z$ is standardized; PRS-CS expects a per-allele <code>BETA</code> and two-sided <code>P</code>. The standard error comes from the sample size and the genotype variance under random mating, $\mathrm{Var}(X_j)=2\,\mathrm{maf}_j(1-\mathrm{maf}_j)$:</p>
+<p>$z$ lives on a standardized scale — it has nothing to do with allele counts or units yet. A real GWAS sumstats file reports a per-allele <code>BETA</code> (how much the trait changes per copy of the effect allele) and a two-sided <code>P</code>. This section derives the three lines that make that conversion, one piece at a time.</p>
+
+<h3>4.1 Where the standard error comes from</h3>
+
+<p>For a single-SNP linear regression of a standardized phenotype ($\mathrm{Var}(Y)=1$) on genotype dosage $X_j\in\{0,1,2\}$, ordinary least squares gives an estimated effect $\hat\beta_j$ whose standard error is, for large $n$,</p>
 
 $$
-\mathrm{se}_j = \frac{1}{\sqrt{2\,n\,\mathrm{maf}_j(1-\mathrm{maf}_j)}},
-\qquad
-\beta_j = z_j \cdot \mathrm{se}_j,
-\qquad
-p_j = 2\bigl(1-\Phi(|z_j|)\bigr).
+\mathrm{se}(\hat\beta_j) \;\approx\; \frac{\sigma_Y}{\sqrt{n\cdot \mathrm{Var}(X_j)}} \;=\; \frac{1}{\sqrt{n\cdot \mathrm{Var}(X_j)}}.
 $$
 
-<pre><code>p    &lt;- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
-se   &lt;- 1 / sqrt(2 * n_gwas * maf * (1 - maf))
-beta &lt;- z * se</code></pre>
+<p>This is the ordinary "standard error shrinks with more samples, and with more variation in the predictor" fact from regression — more copies of an allele actually varying across people means each person's genotype carries more information about $\hat\beta_j$.</p>
 
-<p>Both <code>beta</code> and <code>p</code> are derived from the same <code>z</code>, so they stay mutually consistent — unlike simulating them separately, which risks a sign/magnitude mismatch between the two columns.</p>
+<p>$\mathrm{Var}(X_j)$ itself is a population-genetics fact, not a free parameter: under random mating, each of the 2 allele copies at a SNP is independently the effect allele with probability $\mathrm{maf}_j$, so $X_j$ is Binomial$(2,\mathrm{maf}_j)$, and</p>
 
-<p class="lineref"><code>y_loss</code>-equivalent conversion step, <code>simulate_null_gwas.R</code>.</p>
+$$
+\mathrm{Var}(X_j) = 2\,\mathrm{maf}_j(1-\mathrm{maf}_j).
+$$
+
+<p>Substituting gives the line in the script:</p>
+
+$$
+\mathrm{se}_j = \frac{1}{\sqrt{2\,n\,\mathrm{maf}_j(1-\mathrm{maf}_j)}}.
+$$
+
+<pre><code>se &lt;- 1 / sqrt(2 * n_gwas * maf * (1 - maf))</code></pre>
+
+<div class="note">
+A common SNP ($\mathrm{maf}_j$ near 0.5) has larger $\mathrm{Var}(X_j)$ and so a <em>smaller</em> $\mathrm{se}_j$ than a rare one ($\mathrm{maf}_j$ near 0) at the same sample size — rarer variants get noisier effect-size estimates, exactly as in a real GWAS.
+</div>
+
+<h3>4.2 Where $\beta_j = z_j \cdot \mathrm{se}_j$ comes from</h3>
+
+<p>This isn't a new assumption — it's just the definition of a z-statistic, rearranged. A Wald z-statistic is, by definition, an estimate divided by its own standard error:</p>
+
+$$
+z_j \;:=\; \frac{\hat\beta_j}{\mathrm{se}_j} \qquad\Longrightarrow\qquad \hat\beta_j = z_j \cdot \mathrm{se}_j.
+$$
+
+<p>We simulated $z_j$ directly in Section 3 (that's the quantity with the correlation structure we care about), and Section 4.1 just supplied $\mathrm{se}_j$. Multiplying them recovers a $\hat\beta_j$ on the ordinary per-allele scale — same relationship any real GWAS's $\hat\beta$, $\mathrm{se}$, and $z$ satisfy.</p>
+
+<pre><code>beta &lt;- z * se</code></pre>
+
+<h3>4.3 Where the p-value comes from</h3>
+
+<p>Under the null, the Wald statistic $z_j$ is asymptotically standard normal. A two-sided p-value is just "how much of the normal distribution is at least this extreme, in either direction":</p>
+
+$$
+p_j = \Pr(|Z| \ge |z_j|) = 2\bigl(1-\Phi(|z_j|)\bigr),
+$$
+
+<p>where $\Phi$ is the standard normal CDF.</p>
+
+<pre><code>p &lt;- 2 * stats::pnorm(abs(z), lower.tail = FALSE)</code></pre>
+
+<h3>4.4 Why deriving both from the same $z$ matters</h3>
+
+<p>Downstream, PRS-CS doesn't read <code>BETA</code>'s magnitude directly — it reconstructs its own working z-score from <code>BETA</code>'s <em>sign</em> and <code>P</code> alone (the same reconstruction used for the validation figure in this repo):</p>
+
+$$
+z_j^{\mathrm{recovered}} = \mathrm{sign}(\beta_j)\cdot \Phi^{-1}\!\left(1-\tfrac{p_j}{2}\right).
+$$
+
+<pre><code>sst$z &lt;- sign(sst$BETA) * qnorm(sst$P / 2, lower.tail = FALSE)</code></pre>
+
+<div class="note">
+Because $\beta_j=z_j\mathrm{se}_j$ and $p_j$ were both derived from the <em>same</em> $z_j$ (with $\mathrm{se}_j>0$), this reconstruction recovers $z_j^{\mathrm{recovered}}=z_j$ exactly — the original, LD-correlated value from Section 3, regardless of what $\mathrm{se}_j$ was. Had <code>beta</code> and <code>p</code> instead been simulated separately (e.g. an independent $p\sim\mathrm{Unif}(0,1)$ paired with an unrelated $\beta$), this reconstruction would silently produce a <em>different</em>, inconsistent $z$ — quietly destroying the exact correlation structure Section 3 was built to guarantee, downstream of this script without any error being raised.
+</div>
+
+<p class="lineref"><code>simulate_null_gwas.R</code> (conversion step); <code>plot_null_z_distribution.R</code> (recovery, not checked in).</p>
 
 <h2>5. Block loop and assembly</h2>
 
