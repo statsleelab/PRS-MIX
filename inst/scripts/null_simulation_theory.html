@@ -1,0 +1,389 @@
+<title>Null Simulation Theory</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f6f4ef;
+    --surface: #ffffff;
+    --surface-2: #eef0f7;
+    --ink: #1b1d24;
+    --ink-soft: #5b5e68;
+    --border: rgba(27,29,36,0.12);
+    --accent: #3450c7;
+    --accent-soft: #e4e8fb;
+    --code-ink: #0d8a78;
+    --code-bg: #11151f;
+    --code-fg: #e8ecf4;
+    --code-muted: #8a93a8;
+    --intuition: #a8590a;
+    --intuition-bg: #fbeee0;
+    --shadow: 0 1px 2px rgba(27,29,36,0.04), 0 8px 24px rgba(27,29,36,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #15171c;
+      --surface: #1b1e25;
+      --surface-2: #202537;
+      --ink: #eceef2;
+      --ink-soft: #aab0bd;
+      --border: rgba(236,238,242,0.14);
+      --accent: #8b9cf0;
+      --accent-soft: #252b47;
+      --code-ink: #49dcc3;
+      --code-bg: #0b0e14;
+      --code-fg: #e8ecf4;
+      --code-muted: #808a9e;
+      --intuition: #e2954a;
+      --intuition-bg: #332414;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #15171c;
+    --surface: #1b1e25;
+    --surface-2: #202537;
+    --ink: #eceef2;
+    --ink-soft: #aab0bd;
+    --border: rgba(236,238,242,0.14);
+    --accent: #8b9cf0;
+    --accent-soft: #252b47;
+    --code-ink: #49dcc3;
+    --code-bg: #0b0e14;
+    --code-fg: #e8ecf4;
+    --code-muted: #808a9e;
+    --intuition: #e2954a;
+    --intuition-bg: #332414;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Public Sans", system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    padding-inline: 20px;
+  }
+  .page {
+    max-width: 740px;
+    margin: 0 auto;
+    padding-block: 48px 80px;
+  }
+
+  h1, h2 {
+    font-family: "Fraunces", Georgia, serif;
+    text-wrap: balance;
+    color: var(--ink);
+    margin: 0;
+  }
+  h1 { font-size: clamp(28px, 5vw, 38px); font-weight: 700; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(21px, 3.4vw, 25px); font-weight: 600; letter-spacing: -0.005em; }
+
+  header.masthead {
+    margin-bottom: 52px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: block;
+  }
+  .dek {
+    margin-top: 14px;
+    color: var(--ink-soft);
+    font-size: 17px;
+    max-width: 58ch;
+  }
+  .source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 18px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 11px;
+  }
+
+  section.step {
+    margin-top: 52px;
+    padding-top: 2px;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 4px 18px;
+  }
+  .step-num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+  section.step > h2 { grid-column: 2; align-self: center; }
+  section.step > .step-num { grid-row: 1; }
+  .step-body { grid-column: 2; }
+
+  p { margin: 14px 0; max-width: 64ch; }
+  .step-body > p:first-of-type { margin-top: 10px; }
+
+  code, .v {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.89em;
+  }
+  .v {
+    color: var(--code-ink);
+    background: var(--accent-soft);
+    padding: 1.5px 6px;
+    border-radius: 5px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .codeblock {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: 10px;
+    margin: 18px 0;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .codeblock .filename {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    color: var(--code-muted);
+    padding: 10px 16px 0;
+    letter-spacing: 0.02em;
+  }
+  .codeblock pre {
+    margin: 0;
+    padding: 10px 16px 16px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    white-space: pre;
+  }
+  .codeblock .cv { color: #6fd9c4; }
+  .codeblock .cfn { color: #8fb4f5; }
+  .codeblock .ccom { color: var(--code-muted); font-style: italic; }
+  .codeblock .cnum { color: #e0a85f; }
+
+  .math {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 18px 0;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 14.5px;
+    line-height: 2;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+  .math .line { white-space: pre; }
+  .math .ghost { color: var(--ink-soft); }
+
+  .intuition {
+    background: var(--intuition-bg);
+    border-left: 3px solid var(--intuition);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 18px 0;
+  }
+  .intuition .label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--intuition);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .intuition p { margin: 0; max-width: none; }
+
+  table.ref {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0;
+    font-size: 14.5px;
+  }
+  table.ref th, table.ref td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.ref th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .ref-wrap { overflow-x: auto; }
+
+  footer.closing {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--ink-soft);
+    font-size: 14.5px;
+  }
+  footer.closing .v { white-space: normal; }
+
+  @media (max-width: 480px) {
+    section.step { grid-template-columns: 28px 1fr; gap: 4px 12px; }
+    .step-num { width: 26px; height: 26px; font-size: 12px; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <span class="eyebrow">Theory walkthrough</span>
+    <h1>Why the Null Simulation Draws Correlated Noise</h1>
+    <p class="dek">The math behind <span class="v">simulate_null_gwas.R</span>, mapped line by line onto the variables actually in the script — read this side by side with the code.</p>
+    <span class="source-chip">📄 inst/scripts/simulate_null_gwas.R</span>
+  </header>
+
+  <section class="step">
+    <span class="step-num">1</span>
+    <h2>What the script is asked for</h2>
+    <div class="step-body">
+      <p>The script's four required arguments set up the whole simulation: <span class="v">panel_dir</span> (an already-built LD reference panel), <span class="v">chr</span> (which chromosome), <span class="v">n_gwas</span> (the GWAS sample size to simulate under), and <span class="v">output_path</span> (where the fake sumstats file goes). <span class="v">seed</span> controls the random draw, so re-running with a different seed gives a different noise realization of the same null.</p>
+      <p>The goal: produce a file that looks exactly like a real GWAS summary-statistics file — one row per SNP with <span class="v">BETA</span> and <span class="v">P</span> — except every number in it is, by construction, pure noise. No SNP in this file has a real effect on anything.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="step-num">2</span>
+    <h2>Where the correlation structure comes from</h2>
+    <div class="step-body">
+      <p><span class="v">panel_dir</span> isn't just a source of allele frequencies — it supplies the thing that makes this simulation realistic: the actual, measured correlation between nearby SNPs in a real population.</p>
+      <div class="codeblock">
+        <div class="filename">simulate_null_gwas.R</div>
+        <pre><span class="ccom"># one block of nearby SNPs at a time</span>
+<span class="cv">snplist</span> <- blk[[<span class="cnum">"snplist"</span>]]$read()
+<span class="cv">R</span>      <- as.matrix(blk[[<span class="cnum">"ldblk"</span>]]$read())
+<span class="cv">maf</span>    <- maf_by_snp[<span class="cv">snplist</span>]</pre>
+      </div>
+      <p><span class="v">R</span> is read straight out of the panel's HDF5 file — it was computed earlier, from real genotypes, when the reference panel itself was built. This script doesn't estimate LD; it borrows it.</p>
+      <div class="intuition">
+        <span class="label">Why this matters</span>
+        <p>Every SNP-to-SNP correlation this simulation will contain is already baked into <span class="v">R</span> before a single random number is drawn. Get <span class="v">R</span> right and the simulated noise behaves like real noise; the rest of the script is just a way of "unpacking" <span class="v">R</span> into an actual random sample.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="step-num">3</span>
+    <h2>Why plain independent noise is the wrong null</h2>
+    <div class="step-body">
+      <p>Nearby SNPs travel together across generations, so their genotypes are correlated across any real population. That has a direct statistical consequence: if you regress a trait that has <em>zero</em> true relationship to genotype against two correlated SNPs, the two resulting noise-only effect estimates come out correlated too — <code>Cov(beta_i, beta_j) &prop; r_ij</code>, even though nothing real is happening in either one.</p>
+      <p>Drawing each SNP's fake effect independently throws that fact away. It produces a null dataset that no real experiment would ever generate — too clean, and not a fair test of whether a method's use of LD is actually correct.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="step-num">4</span>
+    <h2>Generating a vector with a chosen correlation: Cholesky</h2>
+    <div class="step-body">
+      <p>There's a standard way to turn independent random numbers into correlated ones with an <em>exact</em> target correlation matrix. If <span class="v">w</span> is a vector of independent standard normals, its covariance is just the identity matrix — no correlation. Transform it linearly, <code>z = A·w</code>, and the covariance of the result becomes <code>A·A&#7488;</code> (the superscript T is matrix transpose). So the whole problem reduces to: find a matrix <span class="v">A</span> such that <code>A·A&#7488; = R</code>.</p>
+      <p>The Cholesky decomposition is exactly that: it factors <span class="v">R</span> into an upper-triangular matrix <span class="v">U</span> such that <code>R = U&#7488;·U</code>. Setting <code>A = U&#7488;</code> finishes the job.</p>
+      <div class="codeblock">
+        <div class="filename">simulate_null_gwas.R</div>
+        <pre><span class="ccom"># z ~ MVN(0, R): draw iid standard normal w, apply R's upper-triangular</span>
+<span class="ccom"># Cholesky factor U (R = t(U) %*% U) so that Cov(t(U) %*% w) == R.</span>
+<span class="cv">U</span> <- chol(<span class="cv">R</span>)
+<span class="cv">w</span> <- stats::rnorm(<span class="cv">m_snps</span>)
+<span class="cv">z</span> <- as.vector(crossprod(<span class="cv">U</span>, <span class="cv">w</span>))</pre>
+      </div>
+      <p>Checking the covariance confirms it works out exactly, with every variable named as it appears above:</p>
+      <div class="math">
+<div class="line">Cov(<span class="v">z</span>)  =  Cov( <span class="v">U</span><sup>T</sup> <span class="v">w</span> )</div>
+<div class="line">        =  <span class="v">U</span><sup>T</sup> &middot; Cov(<span class="v">w</span>) &middot; <span class="v">U</span></div>
+<div class="line">        =  <span class="v">U</span><sup>T</sup> &middot; <span class="ghost">I</span> &middot; <span class="v">U</span>       <span class="ghost">(w is iid standard normal, so Cov(w) = I)</span></div>
+<div class="line">        =  <span class="v">U</span><sup>T</sup> <span class="v">U</span></div>
+<div class="line">        =  <span class="v">R</span>              <span class="ghost">(that's exactly how chol() defines U)</span></div>
+      </div>
+      <div class="intuition">
+        <span class="label">Intuition</span>
+        <p>Build <span class="v">z</span> one entry at a time. The first entry is plain independent noise. The second reuses that same noise plus one new independent piece, blended with a weight tuned so the two entries end up correlated by exactly the right amount. The third reuses both earlier pieces plus one more new one, weighted to match both of its correlations at once — and so on. That "reuse everything before you, add one new independent source" pattern is precisely what the triangular shape of <span class="v">U</span> encodes: <code>crossprod(U, w)</code> is just that recipe applied to <span class="v">w</span> all at once.</p>
+      </div>
+      <p>Cholesky only exists for a matrix that could plausibly be a real covariance matrix (technically: positive semi-definite). That's why the panel-building pipeline already pushes each block's raw empirical correlation matrix through an eigenvalue floor before it's ever saved as <span class="v">ldblk</span> — without that step, <code>chol(R)</code> could fail outright on a block estimated from too few samples.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="step-num">5</span>
+    <h2>Turning a z-score into a GWAS row</h2>
+    <div class="step-body">
+      <p><span class="v">z</span> is on a standardized scale. PRS-CS expects a per-allele <span class="v">BETA</span> and a two-sided <span class="v">P</span>, so the script converts using the standard GWAS relationship between a SNP's effect size, its standard error, and the sample size:</p>
+      <div class="codeblock">
+        <div class="filename">simulate_null_gwas.R</div>
+        <pre><span class="cv">p</span>    <- <span class="cnum">2</span> * stats::pnorm(abs(<span class="cv">z</span>), lower.tail = FALSE)
+<span class="cv">se</span>   <- <span class="cnum">1</span> / sqrt(<span class="cnum">2</span> * <span class="cv">n_gwas</span> * <span class="cv">maf</span> * (<span class="cnum">1</span> - <span class="cv">maf</span>))
+<span class="cv">beta</span> <- <span class="cv">z</span> * <span class="cv">se</span></pre>
+      </div>
+      <p>The <span class="v">se</span> formula comes from how much a genotype varies in the population: a dosage of 0/1/2 copies has variance <code>2&middot;maf&middot;(1&minus;maf)</code> under random mating, and a regression's standard error shrinks with both the sample size and the predictor's variance — more samples or more genetic variation at that SNP both mean a more precise (smaller) <span class="v">se</span>. Multiplying the standardized <span class="v">z</span> back through <span class="v">se</span> lands <span class="v">beta</span> on the same per-allele scale a real GWAS would report, and <span class="v">p</span> is derived from that same <span class="v">z</span>, so the two columns are always mutually consistent.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="step-num">6</span>
+    <h2>One block at a time, then stitched together</h2>
+    <div class="step-body">
+      <p>The whole procedure above runs inside a loop over <span class="v">blk_names</span> — the panel's LD blocks, each one a self-contained chunk of nearby SNPs. A block with fewer than 2 SNPs (<span class="v">m_snps &lt; 2</span>) is skipped outright, since there's no pair to correlate. Every block's result lands in <span class="v">out_parts</span>, and those get stacked into one table (<span class="v">out</span>) at the end and written to <span class="v">output_path</span>.</p>
+      <p>Correlation is only ever simulated <em>within</em> a block, never across blocks — matching the block-diagonal approximation the reference panel itself already makes (SNPs far enough apart on the chromosome are treated as uncorrelated). The simulated null inherits exactly the same LD approximation the real panel uses, nothing more.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="step-num">7</span>
+    <h2>Quick reference</h2>
+    <div class="step-body">
+      <p>Every variable above, in one place:</p>
+      <div class="ref-wrap">
+        <table class="ref">
+          <tr><th>Variable</th><th>What it is</th></tr>
+          <tr><td><span class="v">panel_dir</span>, <span class="v">chr</span></td><td>Which already-built LD reference panel and chromosome to simulate from</td></tr>
+          <tr><td><span class="v">n_gwas</span>, <span class="v">seed</span></td><td>Simulated sample size, and the RNG seed for this noise realization</td></tr>
+          <tr><td><span class="v">snplist</span>, <span class="v">maf</span></td><td>The block's SNP ids and their allele frequencies, read from the panel</td></tr>
+          <tr><td><span class="v">R</span></td><td>The block's real, pre-computed LD correlation matrix (<span class="v">ldblk</span> in the HDF5 file) — the simulation's ground truth</td></tr>
+          <tr><td><span class="v">U</span></td><td>Cholesky factor of <span class="v">R</span>, such that <code>R = U&#7488;U</code></td></tr>
+          <tr><td><span class="v">w</span></td><td>Independent standard-normal draws, one per SNP in the block</td></tr>
+          <tr><td><span class="v">z</span></td><td><code>U&#7488;w</code> — correlated null z-scores, with <code>Cov(z) = R</code> by construction</td></tr>
+          <tr><td><span class="v">se</span>, <span class="v">beta</span>, <span class="v">p</span></td><td><span class="v">z</span> converted onto the per-allele effect-size scale PRS-CS expects</td></tr>
+          <tr><td><span class="v">out_parts</span>, <span class="v">out</span></td><td>Per-block results, then one stacked table written to <span class="v">output_path</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="closing">
+    <p>The two validation figures (<span class="v">null_sim_validation.png</span>, <span class="v">null_z_distribution.png</span>) in this same folder check two different parts of this derivation: that re-drawing <span class="v">z</span> many times actually reproduces <span class="v">R</span>'s correlation pattern, and that each individual SNP's <span class="v">z</span> still looks like a plain N(0,1) on its own.</p>
+  </footer>
+
+</div>
