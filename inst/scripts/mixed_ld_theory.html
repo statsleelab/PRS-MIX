@@ -42,22 +42,62 @@ for w, hdf_chr, snps_this in zip(mix_props, hdfs, snp_blks_all):
 
 <p class="lineref"><code>parse_ldblk_mix()</code> in <code>v2parse_genet_mix.py</code>; <code>w</code> there is one entry of <code>mix_props</code>, <code>R_sub</code> is $\mathbf{D}_k$.</p>
 
-<p>Every claim below rests on one definition: a symmetric matrix $\mathbf{A}$ is <strong>positive semidefinite</strong> (PSD, written $\mathbf{A}\succeq0$) if $\mathbf{v}^{\top}\mathbf{A}\mathbf{v}\ge0$ for every real vector $\mathbf{v}$. A correlation matrix is always PSD by construction (that's what makes <code>chol()</code> work at all in the null-simulation script — Cholesky requires it). This is the only test used throughout.</p>
+<p>Every claim below rests on one definition: a symmetric matrix $\mathbf{A}$ is <strong>positive semidefinite</strong> (PSD, written $\mathbf{A}\succeq0$) if $\mathbf{v}^{\top}\mathbf{A}\mathbf{v}\ge0$ for every real vector $\mathbf{v}$ — never negative, for any $\mathbf{v}$ at all. This is the only test used throughout.</p>
+
+<p>This is exactly the right condition for a correlation matrix, and not by coincidence. If $\mathbf{A}=\mathrm{Cov}(X)$ for some random vector $X=(X_1,\dots,X_n)$, then for any fixed $\mathbf{v}$,
+$$
+\mathbf{v}^{\top}\mathbf{A}\mathbf{v} = \mathrm{Var}(v_1X_1+v_2X_2+\cdots+v_nX_n)
+$$
+— the same multivariable expansion of $\mathrm{Var}(aX+bY)=a^2\mathrm{Var}(X)+b^2\mathrm{Var}(Y)+2ab\,\mathrm{Cov}(X,Y)$ used to verify $\mathrm{Cov}(z)=R$ in the null-simulation derivation, just written for $n$ variables instead of 2. Variance can never be negative, so <em>any</em> genuine covariance or correlation matrix is automatically PSD — it's part of what "covariance matrix" means, not an extra property to check.</p>
+
+<p><strong>A matrix that passes.</strong> $R=\begin{pmatrix}1&0.6\\0.6&1\end{pmatrix}$. Try a few $\mathbf{v}$: $\mathbf{v}=(1,1)$ gives $1+2(0.6)+1=3.2$; $\mathbf{v}=(1,-1)$ gives $1-2(0.6)+1=0.8$; $\mathbf{v}=(1,-1.5)$ gives $1+2(1)(-1.5)(0.6)+2.25=1.45$. Always $\ge0$, as expected for a real correlation matrix.</p>
+
+<p><strong>A matrix that fails — the instructive case.</strong> Suppose three variables have pairwise correlations $r_{12}=0.9$, $r_{13}=0.9$, $r_{23}=-0.9$: variables 2 and 3 are each strongly tied to variable 1 in the same direction, but strongly opposed to each other. Every entry here is individually a valid correlation value in $[-1,1]$ — but do they fit together?
+$$
+M=\begin{pmatrix}1&0.9&0.9\\0.9&1&-0.9\\0.9&-0.9&1\end{pmatrix}
+$$
+Try $\mathbf{v}=(2,-1,-1)$. First $M\mathbf{v}$: row 1 is $2(1)+(-1)(0.9)+(-1)(0.9)=0.2$; row 2 is $2(0.9)+(-1)(1)+(-1)(-0.9)=1.7$; row 3 is the same by symmetry, $1.7$. Then
+$$
+\mathbf{v}^{\top}M\mathbf{v} = 2(0.2)+(-1)(1.7)+(-1)(1.7) = 0.4-1.7-1.7 = -3.
+$$
+<strong>Negative.</strong> $M$ is not PSD — these three correlations cannot simultaneously describe any real set of variables, even though each individual number looked fine. (Equivalently: $M$ has a negative eigenvalue, consistent with this failing $\mathbf{v}$ existing — see the eigenvalue characterization below.) This is exactly the kind of inconsistency the proof in Section 2 has to guard against when combining multiple ancestries' matrices.</p>
+
+<p>A correlation matrix being PSD is also what makes <code>chol()</code> work at all in the null-simulation script — Cholesky is looking for a real "square root" $U$ with $R=U^{\top}U$, and a matrix like $M$ above has no such square root, so <code>chol(M)</code> would simply error out.</p>
 
 <h2>2. Theorem 1, part 1: mixing preserves positive semidefiniteness</h2>
 
-<p><strong>Claim:</strong> if every $\mathbf{D}_k \succeq 0$ and $w_k\ge0$, then $\mathbf{D}_{\mathrm{mix}}\succeq0$.</p>
+<p><strong>Claim:</strong> if every $\mathbf{D}_k \succeq 0$ and $w_k\ge0$ with $\sum_k w_k=1$, then $\mathbf{D}_{\mathrm{mix}}\succeq0$.</p>
 
-<p><strong>Proof.</strong> Take any vector $\mathbf{v}$. Apply the quadratic-form test directly, using that matrix multiplication distributes over the sum defining $\mathbf{D}_{\mathrm{mix}}$:
+<p><strong>Proof, broken into the five moves that matter:</strong></p>
+
+<ol>
+<li><strong>What has to be shown.</strong> By the definition above, PSD means $\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}\ge0$ for <em>every</em> $\mathbf{v}$. So: pick an arbitrary $\mathbf{v}$, and show that number can't be negative.</li>
+<li><strong>Substitute the definition of $\mathbf{D}_{\mathrm{mix}}$.</strong> Nothing proven yet, just rewriting:
+$$\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v} = \mathbf{v}^{\top}\Big(\sum_{k=1}^K w_k \mathbf{D}_k\Big)\mathbf{v}.$$</li>
+<li><strong>Distribute $\mathbf{v}^{\top}(\cdot)\mathbf{v}$ across the sum</strong> — matrix-vector multiplication distributes over addition, so this applies to each $\mathbf{D}_k$ separately. This is the one genuine algebraic step in the whole proof:
+$$\mathbf{v}^{\top}\Big(\sum_{k=1}^K w_k \mathbf{D}_k\Big)\mathbf{v} = \sum_{k=1}^K w_k\,\big(\mathbf{v}^{\top}\mathbf{D}_k\mathbf{v}\big).$$</li>
+<li><strong>Sign-check each term.</strong> $w_k\ge0$ by assumption; $\mathbf{v}^{\top}\mathbf{D}_k\mathbf{v}\ge0$ because $\mathbf{D}_k\succeq0$ — that's the definition of PSD applied to $\mathbf{D}_k$ with this same $\mathbf{v}$. Non-negative times non-negative is non-negative, so every term in the sum is $\ge0$.</li>
+<li><strong>Conclude.</strong> A sum of non-negative terms is non-negative, so $\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}\ge0$. Since $\mathbf{v}$ was arbitrary, this holds for every $\mathbf{v}$ — which is exactly $\mathbf{D}_{\mathrm{mix}}\succeq0$. $\blacksquare$</li>
+</ol>
+
+<p><strong>The same thing with real numbers</strong>, so Step 3's identity isn't just asserted. Take two valid correlation matrices and weights:
 $$
-\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}
-= \mathbf{v}^{\top}\Big(\sum_{k=1}^K w_k \mathbf{D}_k\Big)\mathbf{v}
-= \sum_{k=1}^K w_k\,\big(\mathbf{v}^{\top}\mathbf{D}_k\mathbf{v}\big).
+\mathbf{D}_1=\begin{pmatrix}1&0.6\\0.6&1\end{pmatrix}, \qquad
+\mathbf{D}_2=\begin{pmatrix}1&0.2\\0.2&1\end{pmatrix}, \qquad
+w_1=0.7,\ w_2=0.3.
 $$
-Each factor $\mathbf{v}^{\top}\mathbf{D}_k\mathbf{v}$ is $\ge0$ because $\mathbf{D}_k\succeq0$ (that's the definition); each $w_k\ge0$ by assumption. A sum of nonnegative terms is nonnegative, so $\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}\ge0$ for every $\mathbf{v}$ — which is exactly the definition of $\mathbf{D}_{\mathrm{mix}}\succeq0$. $\blacksquare$</p>
+Mixing entrywise: $\mathbf{D}_{\mathrm{mix}} = 0.7\mathbf{D}_1+0.3\mathbf{D}_2 = \begin{pmatrix}1 & 0.7(0.6)+0.3(0.2)\\ \cdot & 1\end{pmatrix} = \begin{pmatrix}1&0.48\\0.48&1\end{pmatrix}$.</p>
+
+<p>Pick $\mathbf{v}=(1,-1)$ and compute both sides of the Step 3 identity independently:</p>
+<ul>
+<li>$\mathbf{v}^{\top}\mathbf{D}_1\mathbf{v} = 1-2(0.6)+1 = 0.8$</li>
+<li>$\mathbf{v}^{\top}\mathbf{D}_2\mathbf{v} = 1-2(0.2)+1 = 1.6$</li>
+<li>Weighted sum: $0.7(0.8)+0.3(1.6) = 0.56+0.48 = 1.04$</li>
+</ul>
+<p>Now compute $\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}$ directly from the mixed matrix: $1-2(0.48)+1 = 1.04$. Identical — Step 3's distribution identity, confirmed numerically rather than just asserted. And since $0.8\ge0$ and $1.6\ge0$ individually, their blend $1.04$ was guaranteed non-negative before it was even computed — that's Steps 4–5 playing out concretely.</p>
 
 <div class="note">
-This is the entire proof — one line of algebra plus the definition. It's also why the weights need $w_k\ge0$: if a weight were allowed to go negative, that term could flip sign and the sum could go negative, breaking the argument at the one step that needs nonnegativity.
+This is why the weights need $w_k\ge0$: if a weight were allowed to go negative, its term could flip sign in Step 4, and the sum in Step 5 could go negative — breaking the proof at the one step that needs non-negativity. It's also why the counterexample $M$ above doesn't contradict this theorem: $M$ wasn't constructed as a weighted mix of valid PSD matrices with non-negative weights; it was just three correlation numbers picked by hand with no such guarantee behind them.
 </div>
 
 <h2>3. Theorem 1, part 2: eigenvalue bounds</h2>
