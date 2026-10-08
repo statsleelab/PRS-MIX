@@ -60,13 +60,37 @@ Try $\mathbf{v}=(2,-1,-1)$. First $M\mathbf{v}$: row 1 is $2(1)+(-1)(0.9)+(-1)(0
 $$
 \mathbf{v}^{\top}M\mathbf{v} = 2(0.2)+(-1)(1.7)+(-1)(1.7) = 0.4-1.7-1.7 = -3.
 $$
-<strong>Negative.</strong> $M$ is not PSD — these three correlations cannot simultaneously describe any real set of variables, even though each individual number looked fine. (Equivalently: $M$ has a negative eigenvalue, consistent with this failing $\mathbf{v}$ existing — see the eigenvalue characterization below.) This is exactly the kind of inconsistency the proof in Section 2 has to guard against when combining multiple ancestries' matrices.</p>
+<strong>Negative.</strong> $M$ is not PSD — these three correlations cannot simultaneously describe any real set of variables, even though each individual number looked fine. (Equivalently: $M$ has a negative eigenvalue, consistent with this failing $\mathbf{v}$ existing — see the eigenvalue characterization below.) This is exactly the kind of inconsistency the proof in Section 3 has to guard against when combining multiple ancestries' matrices.</p>
 
 <p>A correlation matrix being PSD is also what makes <code>chol()</code> work at all in the null-simulation script — Cholesky is looking for a real "square root" $U$ with $R=U^{\top}U$, and a matrix like $M$ above has no such square root, so <code>chol(M)</code> would simply error out.</p>
 
-<h2>2. Theorem 1, part 1: mixing preserves positive semidefiniteness</h2>
+<h2>2. Why each $\mathbf{D}_k$ itself is PSD</h2>
 
-<p><strong>Claim:</strong> if every $\mathbf{D}_k \succeq 0$ and $w_k\ge0$ with $\sum_k w_k=1$, then $\mathbf{D}_{\mathrm{mix}}\succeq0$.</p>
+<p>Theorem 1 (next section) <em>assumes</em> every $\mathbf{D}_k\succeq0$ as a premise — it doesn't prove that premise. This section fills that gap, and the argument is cleaner than the variance intuition above: it comes directly from how $\mathbf{D}_k$ is built, not from trusting that "real data produces real correlations."</p>
+
+<p>From Section~2.2 of the manuscript (Eq.~2), $\mathbf{D}_k^{(b)} = \frac{1}{n_k}\mathbf{Z}_{k,b}^{\top}\mathbf{Z}_{k,b}$ — a data matrix multiplied by its own transpose (a <em>Gram matrix</em>). General fact: <strong>any matrix of the form $\mathbf{B}^{\top}\mathbf{B}$ is automatically PSD, for any real matrix $\mathbf{B}$ at all.</strong> Proof, for any vector $\mathbf{v}$ (rearranging using associativity, then the transpose rule $(\mathbf{AB})^{\top}=\mathbf{B}^{\top}\mathbf{A}^{\top}$):
+$$
+\mathbf{v}^{\top}(\mathbf{B}^{\top}\mathbf{B})\mathbf{v}
+= (\mathbf{v}^{\top}\mathbf{B}^{\top})(\mathbf{B}\mathbf{v})
+= (\mathbf{B}\mathbf{v})^{\top}(\mathbf{B}\mathbf{v})
+= \|\mathbf{B}\mathbf{v}\|^2 \;\ge\; 0.
+$$
+The whole quantity collapses to "the squared length of the vector $\mathbf{B}\mathbf{v}$" — and a length-squared, being a sum of squared numbers, can never be negative. Apply this with $\mathbf{B}=\frac{1}{\sqrt{n_k}}\mathbf{Z}_{k,b}$ (folding the $\frac{1}{n_k}$ scaling into $\mathbf{B}$) and $\mathbf{D}_k^{(b)}\succeq0$ falls out directly from its construction formula.</p>
+
+<p><strong>Concretely.</strong> Take 3 individuals and 2 SNPs (standardized dosages):
+$$
+\mathbf{Z}=\begin{pmatrix}1&0\\0&1\\1&1\end{pmatrix}, \qquad
+\mathbf{Z}^{\top}\mathbf{Z}=\begin{pmatrix}2&1\\1&2\end{pmatrix}.
+$$
+Pick $\mathbf{v}=(1,-1)$ and compute both sides of the identity independently. Left side, directly from $\mathbf{Z}^{\top}\mathbf{Z}$: $\mathbf{v}^{\top}(\mathbf{Z}^{\top}\mathbf{Z})\mathbf{v} = (1)^2(2)+2(1)(-1)(1)+(-1)^2(2) = 2-2+2=2$. Right side, going back to $\mathbf{Z}$ itself: $\mathbf{Z}\mathbf{v}=(1,-1,0)$, so $\|\mathbf{Z}\mathbf{v}\|^2 = 1^2+(-1)^2+0^2=2$. Both give $2$ — confirming the identity with real numbers, and showing exactly why it can't go negative: $\|\mathbf{Zv}\|^2$ is built entirely out of squared entries added together.</p>
+
+<div class="note">
+This only guarantees $\mathbf{D}_k$ is PSD in exact arithmetic, built from one consistent set of individuals. In the actual pipeline, floating-point rounding can produce a tiny spurious negative eigenvalue (like $-10^{-15}$, numerically meaningless but technically a violation if checked naively), and if missing genotypes were ever handled via <em>pairwise</em>-complete correlations (a different subset of individuals per SNP pair, rather than one consistent $\mathbf{Z}_{k,b}$ for the whole block) the clean $\mathbf{B}^{\top}\mathbf{B}$ guarantee would not apply at all. Both are standard reasons a downstream eigenvalue-floor correction is still worth applying even though this section shows PSD is guaranteed "by construction" in the ideal case.
+</div>
+
+<h2>3. Theorem 1, part 1: mixing preserves positive semidefiniteness</h2>
+
+<p><strong>Claim:</strong> if every $\mathbf{D}_k \succeq 0$ (Section 2) and $w_k\ge0$ with $\sum_k w_k=1$, then $\mathbf{D}_{\mathrm{mix}}\succeq0$.</p>
 
 <p><strong>Proof, broken into the five moves that matter:</strong></p>
 
@@ -100,7 +124,7 @@ Mixing entrywise: $\mathbf{D}_{\mathrm{mix}} = 0.7\mathbf{D}_1+0.3\mathbf{D}_2 =
 This is why the weights need $w_k\ge0$: if a weight were allowed to go negative, its term could flip sign in Step 4, and the sum in Step 5 could go negative — breaking the proof at the one step that needs non-negativity. It's also why the counterexample $M$ above doesn't contradict this theorem: $M$ wasn't constructed as a weighted mix of valid PSD matrices with non-negative weights; it was just three correlation numbers picked by hand with no such guarantee behind them.
 </div>
 
-<h2>3. Theorem 1, part 2: eigenvalue bounds</h2>
+<h2>4. Theorem 1, part 2: eigenvalue bounds</h2>
 
 <p>This part needs one more fact first: the <strong>Rayleigh quotient</strong> characterization of eigenvalues. For a symmetric matrix $\mathbf{A}$,
 $$
@@ -124,7 +148,7 @@ The upper bound follows identically, swapping every $\min$ for $\max$ and flippi
 Intuition: the mixture's worst direction $\mathbf{v}^\star$ is generally not the worst direction for any single $\mathbf{D}_k$ — so each individual term is probably doing better than its own worst case, which is exactly why the bound is an inequality ($\ge$) rather than equality. The mixture's eigenvalues sit somewhere inside the range spanned by the individual matrices' eigenvalues, weighted by $w_k$.
 </div>
 
-<h2>4. Corollary 1: what ridge stabilization actually buys you</h2>
+<h2>5. Corollary 1: what ridge stabilization actually buys you</h2>
 
 <p>First, a fact about adding $\lambda\mathbf{I}$: if $\mathbf{D}_{\mathrm{mix}}\mathbf{v}=\mu\mathbf{v}$ (so $\mathbf{v}$ is an eigenvector with eigenvalue $\mu$), then
 $$
@@ -147,7 +171,7 @@ $$</p>
 Worth noticing directly from this formula: as $\lambda$ grows, numerator and denominator converge toward each other (you're adding the same constant to both), so $\kappa\to1$ — a perfectly-conditioned identity-like matrix. That's the ridge trade-off in one line: larger $\lambda$ buys better conditioning, at the cost of pulling $\mathbf{D}_{\mathrm{mix},\lambda}$ further away from the real, estimated LD structure and toward a plain identity matrix.
 </div>
 
-<h2>5. Proposition 1: small weight changes only perturb the mixture a little</h2>
+<h2>6. Proposition 1: small weight changes only perturb the mixture a little</h2>
 
 <p><strong>Claim:</strong> for two weight vectors $w,w'$ on the simplex,
 $$
