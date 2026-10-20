@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mixed LD matrices — implemented math</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height: 1.55; color: #222; }
+  h1 { border-bottom: 1px solid #ddd; padding-bottom: .3rem; }
+  h2 { margin-top: 2rem; }
+  code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .9em; }
+  pre { background: #f6f8fa; padding: .6rem .8rem; border-radius: 4px; overflow-x: auto; }
+  .lineref { color: #888; font-size: .85em; }
+  table { border-collapse: collapse; margin: 1rem 0; width: 100%; }
+  th, td { border: 1px solid #ddd; padding: .35rem .7rem; text-align: left; vertical-align: top; }
+  th { background: #f6f8fa; }
+  .note { background: #fffae6; border-left: 4px solid #f0c000; padding: .5rem .8rem; margin: 1rem 0; }
+</style>
+</head>
+<body>
+
+<h1>Mixed LD matrices — implemented math</h1>
+
+<p>Companion to <code>inst/prscs-mix/v2parse_genet_mix.py</code>'s <code>parse_ldblk_mix</code>, and to the Theoretical Properties section of the PRS-MIX manuscript (Theorem 1, Corollary 1, Proposition 1). Those theorems were stated in the manuscript without proof; this derives each one from scratch, the same way <code>null_simulation_theory.html</code> derived the Cholesky construction, so the two can be read the same way.</p>
+
+<h2>1. The object in question</h2>
+
+<p>For ancestry group $k$ and LD block $b$, $\mathbf{D}_k$ denotes that group's reconciled, block-level correlation matrix (Section~2.2/2.4 of the manuscript; <code>R_sub</code> in the code below, after allele-flip correction and SVD symmetrization). Given mixing weights $w_k\ge0$ with $\sum_k w_k=1$, the mixed matrix is
+$$
+\mathbf{D}_{\mathrm{mix}} \;=\; \sum_{k=1}^{K} w_k\, \mathbf{D}_k.
+$$</p>
+
+<pre><code>R_mix = None
+for w, hdf_chr, snps_this in zip(mix_props, hdfs, snp_blks_all):
+    ...
+    R_mix = R_sub * w if R_mix is None else R_mix + R_sub * w</code></pre>
+
+<p class="lineref"><code>parse_ldblk_mix()</code> in <code>v2parse_genet_mix.py</code>; <code>w</code> there is one entry of <code>mix_props</code>, <code>R_sub</code> is $\mathbf{D}_k$.</p>
+
+<p>Every claim below rests on one definition: a symmetric matrix $\mathbf{A}$ is <strong>positive semidefinite</strong> (PSD, written $\mathbf{A}\succeq0$) if $\mathbf{v}^{\top}\mathbf{A}\mathbf{v}\ge0$ for every real vector $\mathbf{v}$ — never negative, for any $\mathbf{v}$ at all. This is the only test used throughout.</p>
+
+<p>This is exactly the right condition for a correlation matrix, and not by coincidence. If $\mathbf{A}=\mathrm{Cov}(X)$ for some random vector $X=(X_1,\dots,X_n)$, then for any fixed $\mathbf{v}$,
+$$
+\mathbf{v}^{\top}\mathbf{A}\mathbf{v} = \mathrm{Var}(v_1X_1+v_2X_2+\cdots+v_nX_n)
+$$
+— the same multivariable expansion of $\mathrm{Var}(aX+bY)=a^2\mathrm{Var}(X)+b^2\mathrm{Var}(Y)+2ab\,\mathrm{Cov}(X,Y)$ used to verify $\mathrm{Cov}(z)=R$ in the null-simulation derivation, just written for $n$ variables instead of 2. Variance can never be negative, so <em>any</em> genuine covariance or correlation matrix is automatically PSD — it's part of what "covariance matrix" means, not an extra property to check.</p>
+
+<p><strong>A matrix that passes.</strong> $R=\begin{pmatrix}1&0.6\\0.6&1\end{pmatrix}$. Try a few $\mathbf{v}$: $\mathbf{v}=(1,1)$ gives $1+2(0.6)+1=3.2$; $\mathbf{v}=(1,-1)$ gives $1-2(0.6)+1=0.8$; $\mathbf{v}=(1,-1.5)$ gives $1+2(1)(-1.5)(0.6)+2.25=1.45$. Always $\ge0$, as expected for a real correlation matrix.</p>
+
+<p><strong>A matrix that fails — the instructive case.</strong> Suppose three variables have pairwise correlations $r_{12}=0.9$, $r_{13}=0.9$, $r_{23}=-0.9$: variables 2 and 3 are each strongly tied to variable 1 in the same direction, but strongly opposed to each other. Every entry here is individually a valid correlation value in $[-1,1]$ — but do they fit together?
+$$
+M=\begin{pmatrix}1&0.9&0.9\\0.9&1&-0.9\\0.9&-0.9&1\end{pmatrix}
+$$
+Try $\mathbf{v}=(2,-1,-1)$. First $M\mathbf{v}$: row 1 is $2(1)+(-1)(0.9)+(-1)(0.9)=0.2$; row 2 is $2(0.9)+(-1)(1)+(-1)(-0.9)=1.7$; row 3 is the same by symmetry, $1.7$. Then
+$$
+\mathbf{v}^{\top}M\mathbf{v} = 2(0.2)+(-1)(1.7)+(-1)(1.7) = 0.4-1.7-1.7 = -3.
+$$
+<strong>Negative.</strong> $M$ is not PSD — these three correlations cannot simultaneously describe any real set of variables, even though each individual number looked fine. (Equivalently: $M$ has a negative eigenvalue, consistent with this failing $\mathbf{v}$ existing — see the eigenvalue characterization below.) This is exactly the kind of inconsistency the proof in Section 3 has to guard against when combining multiple ancestries' matrices.</p>
+
+<p>A correlation matrix being PSD is also what makes <code>chol()</code> work at all in the null-simulation script — Cholesky is looking for a real "square root" $U$ with $R=U^{\top}U$, and a matrix like $M$ above has no such square root, so <code>chol(M)</code> would simply error out.</p>
+
+<h2>2. Why each $\mathbf{D}_k$ itself is PSD</h2>
+
+<p>Theorem 1 (next section) <em>assumes</em> every $\mathbf{D}_k\succeq0$ as a premise — it doesn't prove that premise. This section fills that gap, and the argument is cleaner than the variance intuition above: it comes directly from how $\mathbf{D}_k$ is built, not from trusting that "real data produces real correlations."</p>
+
+<p>From Section~2.2 of the manuscript (Eq.~2), $\mathbf{D}_k^{(b)} = \frac{1}{n_k}\mathbf{Z}_{k,b}^{\top}\mathbf{Z}_{k,b}$ — a data matrix multiplied by its own transpose (a <em>Gram matrix</em>). General fact: <strong>any matrix of the form $\mathbf{B}^{\top}\mathbf{B}$ is automatically PSD, for any real matrix $\mathbf{B}$ at all.</strong> Proof, for any vector $\mathbf{v}$ (rearranging using associativity, then the transpose rule $(\mathbf{AB})^{\top}=\mathbf{B}^{\top}\mathbf{A}^{\top}$):
+$$
+\mathbf{v}^{\top}(\mathbf{B}^{\top}\mathbf{B})\mathbf{v}
+= (\mathbf{v}^{\top}\mathbf{B}^{\top})(\mathbf{B}\mathbf{v})
+= (\mathbf{B}\mathbf{v})^{\top}(\mathbf{B}\mathbf{v})
+= \|\mathbf{B}\mathbf{v}\|^2 \;\ge\; 0.
+$$
+The whole quantity collapses to "the squared length of the vector $\mathbf{B}\mathbf{v}$" — and a length-squared, being a sum of squared numbers, can never be negative. Apply this with $\mathbf{B}=\frac{1}{\sqrt{n_k}}\mathbf{Z}_{k,b}$ (folding the $\frac{1}{n_k}$ scaling into $\mathbf{B}$) and $\mathbf{D}_k^{(b)}\succeq0$ falls out directly from its construction formula.</p>
+
+<p><strong>Concretely.</strong> Take 3 individuals and 2 SNPs (standardized dosages):
+$$
+\mathbf{Z}=\begin{pmatrix}1&0\\0&1\\1&1\end{pmatrix}, \qquad
+\mathbf{Z}^{\top}\mathbf{Z}=\begin{pmatrix}2&1\\1&2\end{pmatrix}.
+$$
+Pick $\mathbf{v}=(1,-1)$ and compute both sides of the identity independently. Left side, directly from $\mathbf{Z}^{\top}\mathbf{Z}$: $\mathbf{v}^{\top}(\mathbf{Z}^{\top}\mathbf{Z})\mathbf{v} = (1)^2(2)+2(1)(-1)(1)+(-1)^2(2) = 2-2+2=2$. Right side, going back to $\mathbf{Z}$ itself: $\mathbf{Z}\mathbf{v}=(1,-1,0)$, so $\|\mathbf{Z}\mathbf{v}\|^2 = 1^2+(-1)^2+0^2=2$. Both give $2$ — confirming the identity with real numbers, and showing exactly why it can't go negative: $\|\mathbf{Zv}\|^2$ is built entirely out of squared entries added together.</p>
+
+<div class="note">
+This only guarantees $\mathbf{D}_k$ is PSD in exact arithmetic, built from one consistent set of individuals. In the actual pipeline, floating-point rounding can produce a tiny spurious negative eigenvalue (like $-10^{-15}$, numerically meaningless but technically a violation if checked naively), and if missing genotypes were ever handled via <em>pairwise</em>-complete correlations (a different subset of individuals per SNP pair, rather than one consistent $\mathbf{Z}_{k,b}$ for the whole block) the clean $\mathbf{B}^{\top}\mathbf{B}$ guarantee would not apply at all. Both are standard reasons a downstream eigenvalue-floor correction is still worth applying even though this section shows PSD is guaranteed "by construction" in the ideal case.
+</div>
+
+<h2>3. Theorem 1, part 1: mixing preserves positive semidefiniteness</h2>
+
+<p><strong>Claim:</strong> if every $\mathbf{D}_k \succeq 0$ (Section 2) and $w_k\ge0$ with $\sum_k w_k=1$, then $\mathbf{D}_{\mathrm{mix}}\succeq0$.</p>
+
+<p><strong>Proof, broken into the five moves that matter:</strong></p>
+
+<ol>
+<li><strong>What has to be shown.</strong> By the definition above, PSD means $\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}\ge0$ for <em>every</em> $\mathbf{v}$. So: pick an arbitrary $\mathbf{v}$, and show that number can't be negative.</li>
+<li><strong>Substitute the definition of $\mathbf{D}_{\mathrm{mix}}$.</strong> Nothing proven yet, just rewriting:
+$$\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v} = \mathbf{v}^{\top}\Big(\sum_{k=1}^K w_k \mathbf{D}_k\Big)\mathbf{v}.$$</li>
+<li><strong>Distribute $\mathbf{v}^{\top}(\cdot)\mathbf{v}$ across the sum</strong> — matrix-vector multiplication distributes over addition, so this applies to each $\mathbf{D}_k$ separately. This is the one genuine algebraic step in the whole proof:
+$$\mathbf{v}^{\top}\Big(\sum_{k=1}^K w_k \mathbf{D}_k\Big)\mathbf{v} = \sum_{k=1}^K w_k\,\big(\mathbf{v}^{\top}\mathbf{D}_k\mathbf{v}\big).$$</li>
+<li><strong>Sign-check each term.</strong> $w_k\ge0$ by assumption; $\mathbf{v}^{\top}\mathbf{D}_k\mathbf{v}\ge0$ because $\mathbf{D}_k\succeq0$ — that's the definition of PSD applied to $\mathbf{D}_k$ with this same $\mathbf{v}$. Non-negative times non-negative is non-negative, so every term in the sum is $\ge0$.</li>
+<li><strong>Conclude.</strong> A sum of non-negative terms is non-negative, so $\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}\ge0$. Since $\mathbf{v}$ was arbitrary, this holds for every $\mathbf{v}$ — which is exactly $\mathbf{D}_{\mathrm{mix}}\succeq0$. $\blacksquare$</li>
+</ol>
+
+<p><strong>The same thing with real numbers</strong>, so Step 3's identity isn't just asserted. Take two valid correlation matrices and weights:
+$$
+\mathbf{D}_1=\begin{pmatrix}1&0.6\\0.6&1\end{pmatrix}, \qquad
+\mathbf{D}_2=\begin{pmatrix}1&0.2\\0.2&1\end{pmatrix}, \qquad
+w_1=0.7,\ w_2=0.3.
+$$
+Mixing entrywise: $\mathbf{D}_{\mathrm{mix}} = 0.7\mathbf{D}_1+0.3\mathbf{D}_2 = \begin{pmatrix}1 & 0.7(0.6)+0.3(0.2)\\ \cdot & 1\end{pmatrix} = \begin{pmatrix}1&0.48\\0.48&1\end{pmatrix}$.</p>
+
+<p>Pick $\mathbf{v}=(1,-1)$ and compute both sides of the Step 3 identity independently:</p>
+<ul>
+<li>$\mathbf{v}^{\top}\mathbf{D}_1\mathbf{v} = 1-2(0.6)+1 = 0.8$</li>
+<li>$\mathbf{v}^{\top}\mathbf{D}_2\mathbf{v} = 1-2(0.2)+1 = 1.6$</li>
+<li>Weighted sum: $0.7(0.8)+0.3(1.6) = 0.56+0.48 = 1.04$</li>
+</ul>
+<p>Now compute $\mathbf{v}^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}$ directly from the mixed matrix: $1-2(0.48)+1 = 1.04$. Identical — Step 3's distribution identity, confirmed numerically rather than just asserted. And since $0.8\ge0$ and $1.6\ge0$ individually, their blend $1.04$ was guaranteed non-negative before it was even computed — that's Steps 4–5 playing out concretely.</p>
+
+<div class="note">
+This is why the weights need $w_k\ge0$: if a weight were allowed to go negative, its term could flip sign in Step 4, and the sum in Step 5 could go negative — breaking the proof at the one step that needs non-negativity. It's also why the counterexample $M$ above doesn't contradict this theorem: $M$ wasn't constructed as a weighted mix of valid PSD matrices with non-negative weights; it was just three correlation numbers picked by hand with no such guarantee behind them.
+</div>
+
+<h2>4. Theorem 1, part 2: eigenvalue bounds</h2>
+
+<p>This part needs one more fact first: the <strong>Rayleigh quotient</strong> characterization of eigenvalues. For a symmetric matrix $\mathbf{A}$,
+$$
+\lambda_{\min}(\mathbf{A}) = \min_{\|\mathbf{v}\|=1} \mathbf{v}^{\top}\mathbf{A}\mathbf{v}, \qquad
+\lambda_{\max}(\mathbf{A}) = \max_{\|\mathbf{v}\|=1} \mathbf{v}^{\top}\mathbf{A}\mathbf{v}.
+$$
+In words: the smallest eigenvalue is the worst-case (smallest) value the quadratic form can take over unit-length vectors, and the largest eigenvalue is the best-case (largest). This means for <em>any</em> unit vector $\mathbf{v}$ (not necessarily the minimizer), $\mathbf{v}^{\top}\mathbf{A}\mathbf{v} \ge \lambda_{\min}(\mathbf{A})$ always holds — that single inequality is the only tool the proof needs.</p>
+
+<p><strong>Proof of the lower bound.</strong> Let $\mathbf{v}^\star$ be a unit vector achieving $\lambda_{\min}(\mathbf{D}_{\mathrm{mix}})$ (one exists by the Rayleigh characterization). Expand exactly as in Section 2:
+$$
+\lambda_{\min}(\mathbf{D}_{\mathrm{mix}}) = (\mathbf{v}^\star)^{\top}\mathbf{D}_{\mathrm{mix}}\mathbf{v}^\star
+= \sum_{k=1}^K w_k\,\big((\mathbf{v}^\star)^{\top}\mathbf{D}_k\mathbf{v}^\star\big).
+$$
+Now apply the Rayleigh fact to <em>each</em> term: $\mathbf{v}^\star$ is some unit vector, so $(\mathbf{v}^\star)^{\top}\mathbf{D}_k\mathbf{v}^\star \ge \lambda_{\min}(\mathbf{D}_k)$ for every $k$ — even though $\mathbf{v}^\star$ was chosen to minimize the mixture, not any individual $\mathbf{D}_k$. Substituting this bound into every term of the sum (valid since $w_k\ge0$ preserves the inequality direction when multiplying):
+$$
+\lambda_{\min}(\mathbf{D}_{\mathrm{mix}}) \;\ge\; \sum_{k=1}^K w_k\,\lambda_{\min}(\mathbf{D}_k).
+$$
+The upper bound follows identically, swapping every $\min$ for $\max$ and flipping the one inequality direction. $\blacksquare$</p>
+
+<div class="note">
+Intuition: the mixture's worst direction $\mathbf{v}^\star$ is generally not the worst direction for any single $\mathbf{D}_k$ — so each individual term is probably doing better than its own worst case, which is exactly why the bound is an inequality ($\ge$) rather than equality. The mixture's eigenvalues sit somewhere inside the range spanned by the individual matrices' eigenvalues, weighted by $w_k$.
+</div>
+
+<h2>5. Corollary 1: what ridge stabilization actually buys you</h2>
+
+<p>First, a fact about adding $\lambda\mathbf{I}$: if $\mathbf{D}_{\mathrm{mix}}\mathbf{v}=\mu\mathbf{v}$ (so $\mathbf{v}$ is an eigenvector with eigenvalue $\mu$), then
+$$
+(\mathbf{D}_{\mathrm{mix}}+\lambda\mathbf{I})\mathbf{v} = \mathbf{D}_{\mathrm{mix}}\mathbf{v} + \lambda\mathbf{v} = \mu\mathbf{v}+\lambda\mathbf{v} = (\mu+\lambda)\mathbf{v}.
+$$
+So $\mathbf{v}$ is <em>still</em> an eigenvector of $\mathbf{D}_{\mathrm{mix},\lambda}$, just with eigenvalue shifted by exactly $\lambda$. Every eigenvalue of $\mathbf{D}_{\mathrm{mix}}$ shifts up by the same amount $\lambda$; the eigenvectors don't change at all.</p>
+
+<p>Applying that to the smallest eigenvalue: $\lambda_{\min}(\mathbf{D}_{\mathrm{mix},\lambda}) = \lambda_{\min}(\mathbf{D}_{\mathrm{mix}}) + \lambda$. Since $\mathbf{D}_{\mathrm{mix}}\succeq0$ (Section 2), $\lambda_{\min}(\mathbf{D}_{\mathrm{mix}})\ge0$, so
+$$
+\lambda_{\min}(\mathbf{D}_{\mathrm{mix},\lambda}) \ge \lambda > 0.
+$$
+A symmetric matrix with every eigenvalue strictly positive is <strong>positive definite</strong>, not just semidefinite — which is the one-word difference that makes it invertible. This is the actual point of ridge stabilization: $\mathbf{D}_{\mathrm{mix}}$ on its own might have a zero eigenvalue (e.g. from a block with duplicated or near-collinear SNPs) and be singular; adding $\lambda\mathbf{I}$ guarantees it never is.</p>
+
+<p>The condition number $\kappa(\mathbf{A})=\lambda_{\max}(\mathbf{A})/\lambda_{\min}(\mathbf{A})$ measures how numerically unstable solving a linear system with $\mathbf{A}$ is (the posterior updates in the manuscript, Eq.~7/9, all require inverting a matrix like this). Using the eigenvalue shift again for both the max and min:
+$$
+\kappa(\mathbf{D}_{\mathrm{mix},\lambda}) = \frac{\lambda_{\max}(\mathbf{D}_{\mathrm{mix}})+\lambda}{\lambda_{\min}(\mathbf{D}_{\mathrm{mix}})+\lambda}.
+$$</p>
+
+<div class="note">
+Worth noticing directly from this formula: as $\lambda$ grows, numerator and denominator converge toward each other (you're adding the same constant to both), so $\kappa\to1$ — a perfectly-conditioned identity-like matrix. That's the ridge trade-off in one line: larger $\lambda$ buys better conditioning, at the cost of pulling $\mathbf{D}_{\mathrm{mix},\lambda}$ further away from the real, estimated LD structure and toward a plain identity matrix.
+</div>
+
+<h2>6. Proposition 1: small weight changes only perturb the mixture a little</h2>
+
+<p><strong>Claim:</strong> for two weight vectors $w,w'$ on the simplex,
+$$
+\|\mathbf{D}_{\mathrm{mix}}(w)-\mathbf{D}_{\mathrm{mix}}(w')\|_2 \;\le\; \sum_{k=1}^K |w_k-w'_k|\,\|\mathbf{D}_k\|_2.
+$$</p>
+
+<p><strong>Proof.</strong> Subtract the two mixtures term by term — since both are sums over the same $\mathbf{D}_k$'s, the difference collects the weight differences:
+$$
+\mathbf{D}_{\mathrm{mix}}(w)-\mathbf{D}_{\mathrm{mix}}(w') = \sum_{k=1}^K w_k\mathbf{D}_k - \sum_{k=1}^K w'_k\mathbf{D}_k = \sum_{k=1}^K (w_k-w'_k)\,\mathbf{D}_k.
+$$
+Apply the triangle inequality for the matrix norm ($\|\mathbf{A}+\mathbf{B}\|_2\le\|\mathbf{A}\|_2+\|\mathbf{B}\|_2$, the same property any distance measure satisfies) to the whole sum, then pull each scalar $(w_k-w'_k)$ out of its norm as an absolute value (a norm scales with $|c|$ when a term is multiplied by scalar $c$):
+$$
+\left\|\sum_{k=1}^K (w_k-w'_k)\mathbf{D}_k\right\|_2 \le \sum_{k=1}^K \|(w_k-w'_k)\mathbf{D}_k\|_2 = \sum_{k=1}^K |w_k-w'_k|\,\|\mathbf{D}_k\|_2. \quad\blacksquare
+$$</p>
+
+<div class="note">
+This says the mixing map $w\mapsto\mathbf{D}_{\mathrm{mix}}(w)$ can't blow up a small change in the weights into a huge change in the mixed matrix — moving each $w_k$ by a little moves $\mathbf{D}_{\mathrm{mix}}$ by at most a proportional amount. Nothing in the current manuscript draft actually uses this (no sensitivity analysis or weight-estimation argument references it yet), which is why it's the one of the three results worth considering cutting unless a later section ends up needing it.
+</div>
+
+<h2>Math to code map</h2>
+
+<table>
+<tr><th>Quantity</th><th>Symbol</th><th>Code</th></tr>
+<tr><td>Ancestry-specific block LD matrix</td><td>$\mathbf{D}_k$</td><td><code>R_sub</code> (after flip correction + SVD symmetrization)</td></tr>
+<tr><td>Mixing weight</td><td>$w_k$</td><td><code>w</code> (one entry of <code>mix_props</code>)</td></tr>
+<tr><td>Mixed LD matrix</td><td>$\mathbf{D}_{\mathrm{mix}}$</td><td><code>R_mix</code></td></tr>
+<tr><td>Ridge-stabilized mixture</td><td>$\mathbf{D}_{\mathrm{mix},\lambda}$</td><td>not currently implemented in <code>parse_ldblk_mix</code> — the eigenvalue-floor correction in the R-side panel generation (<code>.shrink_and_make_pd</code>) plays a related but distinct stabilizing role</td></tr>
+<tr><td>Smallest / largest eigenvalue</td><td>$\lambda_{\min}(\cdot)$, $\lambda_{\max}(\cdot)$</td><td>would correspond to <code>min(eigvalsh(R_mix))</code> / <code>max(...)</code> if computed</td></tr>
+</table>
+
+<div class="note">
+Note the gap in the last two rows: the manuscript's Corollary 1 describes ridge stabilization ($\mathbf{D}_{\mathrm{mix}}+\lambda\mathbf{I}$) as part of the mixing step, but <code>parse_ldblk_mix</code> as currently written does not add $\lambda\mathbf{I}$ anywhere — the actual positive-definiteness safeguard in this codebase happens earlier, per-population, via the eigenvalue floor in R's <code>.shrink_and_make_pd()</code>, before mixing. Worth deciding whether to (a) add an explicit ridge step to <code>parse_ldblk_mix</code> so the code matches Corollary 1 exactly, or (b) rewrite Corollary 1 to describe the eigenvalue-floor approach actually implemented.
+</div>
+
+</body>
+</html>

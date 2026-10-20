@@ -59,6 +59,15 @@ panel_dirs <- gauss::generate_prscs_ld_panels(
 # panel_dirs -> list(EUR = "prscs_ref/ldblk_1kg_eur33kg", ASN = "prscs_ref/ldblk_1kg_asn33kg")
 ```
 
+Covariance normalization correction: `CalWgtCov()` now divides each
+population's centered cross-product by its sample degrees of freedom.
+Previously, each within-population covariance was inflated by the square
+of that population's sample size, distorting superpopulation LD. Regenerate
+panels built with the old estimator and rerun downstream analyses. The
+corrected estimator combines weighted within-population sample covariances
+and covariance of population means; it is not exactly pooled-sample Pearson
+LD. This shared helper also affects other GAUSS analyses that use it.
+
 For a single population's panel (no cross-population reconciliation
 needed), use `generate_prscs_ld_panel()` instead — see
 `inst/scripts/generate_prscs_ld_chr_example.R` for a runnable,

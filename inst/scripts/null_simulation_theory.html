@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>simulate_null_gwas.R — implemented math</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height: 1.55; color: #222; }
+  h1 { border-bottom: 1px solid #ddd; padding-bottom: .3rem; }
+  h2 { margin-top: 2rem; }
+  code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .9em; }
+  pre { background: #f6f8fa; padding: .6rem .8rem; border-radius: 4px; overflow-x: auto; }
+  .lineref { color: #888; font-size: .85em; }
+  table { border-collapse: collapse; margin: 1rem 0; width: 100%; }
+  th, td { border: 1px solid #ddd; padding: .35rem .7rem; text-align: left; vertical-align: top; }
+  th { background: #f6f8fa; }
+  .note { background: #fffae6; border-left: 4px solid #f0c000; padding: .5rem .8rem; margin: 1rem 0; }
+</style>
+</head>
+<body>
+
+<h1>simulate_null_gwas.R — implemented math</h1>
+
+<p>Companion to <code>inst/scripts/simulate_null_gwas.R</code>. The script draws a null GWAS summary-statistics file (no real genotype-phenotype association anywhere) that still carries the same LD-induced correlation between nearby SNPs a real null dataset would have, using an already-built LD reference panel (<code>panel_dir</code>) as the source of both that correlation structure and the allele frequencies needed to put the result on PRS-CS's expected scale.</p>
+
+<h2>1. Reference panel inputs</h2>
+
+<ul>
+  <li>One LD block at a time, $m$ SNPs in the block, indexed by $j$.</li>
+  <li>Block correlation matrix $R \in \mathbb{R}^{m\times m}$, read from <code>ldblk</code> in the panel's HDF5 file.</li>
+  <li>Allele frequency $\mathrm{maf}_j$ per SNP, read from <code>snpinfo_1kg_hm3</code> and looked up via <code>maf_by_snp</code>.</li>
+  <li>Simulated GWAS sample size $n$, the script's <code>n_gwas</code> argument.</li>
+</ul>
+
+<p class="lineref"><code>R &lt;- as.matrix(blk[["ldblk"]]$read())</code>, <code>maf &lt;- maf_by_snp[snplist]</code> in <code>simulate_null_gwas.R</code>.</p>
+
+<h2>2. Null target distribution</h2>
+
+<p>The quantity being simulated is a vector of null z-scores for the block, with exactly $R$ as its covariance:</p>
+
+$$
+z \sim \mathcal{N}(0,\, R), \qquad z \in \mathbb{R}^{m}.
+$$
+
+<div class="note">
+Drawing each $z_j$ independently would set $\mathrm{Cov}(z)=I$ instead of $R$. Real null GWAS noise isn't independent across nearby SNPs — two SNPs in LD still produce correlated effect-size estimates under the null, purely because their genotypes are correlated. Simulating $z\sim\mathcal{N}(0,R)$ reproduces that; i.i.d. noise would not.
+</div>
+
+<h2>3. Cholesky factorization</h2>
+
+<p>$R$ is factored as $R = U^{\top}U$ with $U$ upper-triangular. Drawing $w$ i.i.d. standard normal and setting $z = U^{\top}w$ gives the target covariance exactly:</p>
+
+$$
+\mathrm{Cov}(z) = \mathrm{Cov}(U^{\top}w) = U^{\top}\,\mathrm{Cov}(w)\,U = U^{\top} I\, U = U^{\top}U = R.
+$$
+
+<pre><code>U &lt;- chol(R)
+w &lt;- stats::rnorm(m_snps)
+z &lt;- as.vector(crossprod(U, w))</code></pre>
+
+<p>Code mapping:</p>
+
+<table>
+<tr><th>Math</th><th>Code</th></tr>
+<tr><td>$R$</td><td><code>R</code></td></tr>
+<tr><td>$U$ (upper-triangular, $R=U^\top U$)</td><td><code>U &lt;- chol(R)</code></td></tr>
+<tr><td>$w$, i.i.d. $\mathcal{N}(0,1)$</td><td><code>w &lt;- stats::rnorm(m_snps)</code></td></tr>
+<tr><td>$z = U^\top w$</td><td><code>z &lt;- as.vector(crossprod(U, w))</code></td></tr>
+</table>
+
+<p>$R$ must be positive semi-definite for <code>chol()</code> to succeed; the panel-generation pipeline's eigenvalue-floor correction on <code>ldblk</code> guarantees this before the matrix is ever written.</p>
+
+<p class="lineref"><code>simulate_null_gwas.R</code>, inside the per-block loop over <code>blk_names</code>.</p>
+
+<h2>4. Converting $z$ to a sumstats row</h2>
+
+<p>$z$ lives on a standardized scale — it has nothing to do with allele counts or units yet. A real GWAS sumstats file reports a per-allele <code>BETA</code> (how much the trait changes per copy of the effect allele) and a two-sided <code>P</code>. This section derives the three lines that make that conversion, one piece at a time.</p>
+
+<h3>4.1 Where the standard error comes from</h3>
+
+<p>For a single-SNP linear regression of a standardized phenotype ($\mathrm{Var}(Y)=1$) on genotype dosage $X_j\in\{0,1,2\}$, ordinary least squares gives an estimated effect $\hat\beta_j$ whose standard error is, for large $n$,</p>
+
+$$
+\mathrm{se}(\hat\beta_j) \;\approx\; \frac{\sigma_Y}{\sqrt{n\cdot \mathrm{Var}(X_j)}} \;=\; \frac{1}{\sqrt{n\cdot \mathrm{Var}(X_j)}}.
+$$
+
+<p>This is the ordinary "standard error shrinks with more samples, and with more variation in the predictor" fact from regression — more copies of an allele actually varying across people means each person's genotype carries more information about $\hat\beta_j$.</p>
+
+<p>$\mathrm{Var}(X_j)$ itself is a population-genetics fact, not a free parameter: under random mating, each of the 2 allele copies at a SNP is independently the effect allele with probability $\mathrm{maf}_j$, so $X_j$ is Binomial$(2,\mathrm{maf}_j)$, and</p>
+
+$$
+\mathrm{Var}(X_j) = 2\,\mathrm{maf}_j(1-\mathrm{maf}_j).
+$$
+
+<p>Substituting gives the line in the script:</p>
+
+$$
+\mathrm{se}_j = \frac{1}{\sqrt{2\,n\,\mathrm{maf}_j(1-\mathrm{maf}_j)}}.
+$$
+
+<pre><code>se &lt;- 1 / sqrt(2 * n_gwas * maf * (1 - maf))</code></pre>
+
+<div class="note">
+A common SNP ($\mathrm{maf}_j$ near 0.5) has larger $\mathrm{Var}(X_j)$ and so a <em>smaller</em> $\mathrm{se}_j$ than a rare one ($\mathrm{maf}_j$ near 0) at the same sample size — rarer variants get noisier effect-size estimates, exactly as in a real GWAS.
+</div>
+
+<h3>4.2 Where $\beta_j = z_j \cdot \mathrm{se}_j$ comes from</h3>
+
+<p>This isn't a new assumption — it's just the definition of a z-statistic, rearranged. A Wald z-statistic is, by definition, an estimate divided by its own standard error:</p>
+
+$$
+z_j \;:=\; \frac{\hat\beta_j}{\mathrm{se}_j} \qquad\Longrightarrow\qquad \hat\beta_j = z_j \cdot \mathrm{se}_j.
+$$
+
+<p>We simulated $z_j$ directly in Section 3 (that's the quantity with the correlation structure we care about), and Section 4.1 just supplied $\mathrm{se}_j$. Multiplying them recovers a $\hat\beta_j$ on the ordinary per-allele scale — same relationship any real GWAS's $\hat\beta$, $\mathrm{se}$, and $z$ satisfy.</p>
+
+<pre><code>beta &lt;- z * se</code></pre>
+
+<h3>4.3 Where the p-value comes from</h3>
+
+<p>Under the null, the Wald statistic $z_j$ is asymptotically standard normal. A two-sided p-value is just "how much of the normal distribution is at least this extreme, in either direction":</p>
+
+$$
+p_j = \Pr(|Z| \ge |z_j|) = 2\bigl(1-\Phi(|z_j|)\bigr),
+$$
+
+<p>where $\Phi$ is the standard normal CDF.</p>
+
+<pre><code>p &lt;- 2 * stats::pnorm(abs(z), lower.tail = FALSE)</code></pre>
+
+<h3>4.4 Why deriving both from the same $z$ matters</h3>
+
+<p>Downstream, PRS-CS doesn't read <code>BETA</code>'s magnitude directly — it reconstructs its own working z-score from <code>BETA</code>'s <em>sign</em> and <code>P</code> alone (the same reconstruction used for the validation figure in this repo):</p>
+
+$$
+z_j^{\mathrm{recovered}} = \mathrm{sign}(\beta_j)\cdot \Phi^{-1}\!\left(1-\tfrac{p_j}{2}\right).
+$$
+
+<pre><code>sst$z &lt;- sign(sst$BETA) * qnorm(sst$P / 2, lower.tail = FALSE)</code></pre>
+
+<div class="note">
+Because $\beta_j=z_j\mathrm{se}_j$ and $p_j$ were both derived from the <em>same</em> $z_j$ (with $\mathrm{se}_j>0$), this reconstruction recovers $z_j^{\mathrm{recovered}}=z_j$ exactly — the original, LD-correlated value from Section 3, regardless of what $\mathrm{se}_j$ was. Had <code>beta</code> and <code>p</code> instead been simulated separately (e.g. an independent $p\sim\mathrm{Unif}(0,1)$ paired with an unrelated $\beta$), this reconstruction would silently produce a <em>different</em>, inconsistent $z$ — quietly destroying the exact correlation structure Section 3 was built to guarantee, downstream of this script without any error being raised.
+</div>
+
+<p class="lineref"><code>simulate_null_gwas.R</code> (conversion step); <code>plot_null_z_distribution.R</code> (recovery, not checked in).</p>
+
+<h2>5. Block loop and assembly</h2>
+
+<p>The procedure above runs once per block in <code>blk_names</code>. A block with $m<2$ (<code>m_snps &lt; 2</code>) is skipped, since there is no pair to correlate. Correlation is only ever simulated <em>within</em> a block, matching the block-diagonal approximation the reference panel itself uses — SNPs in different blocks are treated as uncorrelated, both here and in the panel that supplied $R$.</p>
+
+<pre><code>out_parts[[i]] &lt;- data.frame(SNP = snplist, A1 = a1, A2 = a2, BETA = beta, P = p)
+...
+out &lt;- do.call(rbind, out_parts)
+utils::write.table(out, file = output_path, sep = "\t", row.names = FALSE, quote = FALSE)</code></pre>
+
+<div class="note">
+Validated two ways (<code>inst/dev-tests/null_sim_validation.png</code>, <code>null_z_distribution.png</code>, not checked in): re-drawing $z$ 2,000 times for one block recovered the true $R$ with corr(true, empirical) $=0.996$; the marginal distribution of $z$ across the generated sumstats file matched $\mathcal{N}(0,1)$ closely, with a QQ-plot genomic inflation $\lambda=0.877$ — the expected mild deflation from correlated rather than independent tests, not a defect.
+</div>
+
+<h2>Math to code map</h2>
+
+<table>
+<tr><th>Quantity</th><th>Symbol</th><th>Code</th></tr>
+<tr><td>LD reference panel, chromosome</td><td>—</td><td><code>panel_dir</code>, <code>chr</code></td></tr>
+<tr><td>Simulated GWAS sample size</td><td>$n$</td><td><code>n_gwas</code></td></tr>
+<tr><td>RNG seed</td><td>—</td><td><code>seed</code></td></tr>
+<tr><td>Block SNP ids</td><td>—</td><td><code>snplist</code></td></tr>
+<tr><td>Allele frequency</td><td>$\mathrm{maf}_j$</td><td><code>maf</code> (via <code>maf_by_snp</code>)</td></tr>
+<tr><td>Block LD correlation matrix</td><td>$R$</td><td><code>R</code> (<code>ldblk</code> in the panel's HDF5 file)</td></tr>
+<tr><td>Cholesky factor of $R$</td><td>$U$</td><td><code>U</code></td></tr>
+<tr><td>Independent standard normal draws</td><td>$w$</td><td><code>w</code></td></tr>
+<tr><td>Correlated null z-scores</td><td>$z$</td><td><code>z</code></td></tr>
+<tr><td>Standard error</td><td>$\mathrm{se}_j$</td><td><code>se</code></td></tr>
+<tr><td>Simulated effect size</td><td>$\beta_j$</td><td><code>beta</code></td></tr>
+<tr><td>Simulated p-value</td><td>$p_j$</td><td><code>p</code></td></tr>
+<tr><td>Per-block results, stacked output</td><td>—</td><td><code>out_parts</code>, <code>out</code></td></tr>
+</table>
+
+</body>
+</html>
