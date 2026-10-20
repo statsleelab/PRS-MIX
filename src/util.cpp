@@ -81,12 +81,15 @@ double CalCor(std::vector<std::string>& x, std::vector<std::string>& y){
  * For each population, the function:
  *  - Computes the sum of genotype counts from x and y.
  *  - Computes the sum of cross-products of the genotype counts.
- *  - Uses the formula with an unbiased correction factor: (m/(m-1)) * (m * sumxy - sumx * sumy),
+ *  - Computes the sample covariance as (m * sumxy - sumx * sumy) / (m * (m - 1)),
  *    where m is the number of individuals (length of the genotype string).
  *  - Multiplies the result by the corresponding population weight from pop_wgt_vec.
  * 
- * The function then adjusts for the weighted means of the populations by combining the 
- * accumulated values and returns the final weighted covariance.
+ * The function adds the covariance of the population means, returning
+ * sum(w_i * sample_cov_i) + sum(w_i * mean_x_i * mean_y_i)
+ * - sum(w_i * mean_x_i) * sum(w_i * mean_y_i), for weights summing to one.
+ * This uses unbiased within-population covariances; it is not exactly the
+ * finite-sample covariance obtained by concatenating all individuals.
  * 
  * @param x A vector of strings, each containing genotype calls (as digits) for a SNP in a specific population.
  * @param y A vector of strings, each containing genotype calls (as digits) for a paired SNP corresponding to the populations in x.
@@ -114,7 +117,9 @@ double CalWgtCov(std::vector<std::string>& x, std::vector<std::string>& y, std::
       sumy += yij;
       sumxy += xij*yij;
     }
-    double factor = ((double)m) / (m - 1); // ensure floating-point division
+    // The numerator is m times the centered cross-product sum. Dividing by
+    // m*(m-1) gives sample covariance; m/(m-1) would inflate it by m^2.
+    double factor = 1.0 / (static_cast<double>(m) * (m - 1));
     wsumcov += wgt_val*factor*(m*sumxy-sumx*sumy);
     wsum_mi_mj += wgt_val*(sumx/m)*(sumy/m);
     wsum_mi += wgt_val*(sumx/m);
