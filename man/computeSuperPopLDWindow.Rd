@@ -11,7 +11,8 @@ computeSuperPopLDWindow(
   reference_data_file,
   reference_pop_desc_file,
   maf_cutoff = NULL,
-  missing_cutoff = NULL
+  missing_cutoff = NULL,
+  keep_bp = NULL
 )
 }
 \arguments{
@@ -24,6 +25,7 @@ computeSuperPopLDWindow(
 \item{reference_pop_desc_file}{Reference panel population description file.}
 \item{maf_cutoff}{Optional MAF threshold (default 0.01).}
 \item{missing_cutoff}{Optional missingness threshold in [0,1] (default 1.0).}
+\item{keep_bp}{Optional integer vector of base-pair positions; only reference SNPs at these positions are read and used. Allele matching at multi-allelic sites is left to the caller.}
 }
 \value{A list with \code{snplist} and \code{cormat}.}
 \description{Computes a signed LD correlation matrix for one genomic region and one selected superpopulation directly from GAUSS reference files.}

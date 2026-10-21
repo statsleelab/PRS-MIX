@@ -53,6 +53,14 @@ struct SuperPopLDWindowCleanup {
 //' @param reference_pop_desc_file Reference panel population description file.
 //' @param maf_cutoff Optional MAF threshold. Defaults to 0.01.
 //' @param missing_cutoff Optional missingness threshold in [0,1]. Defaults to 1.0.
+//' @param keep_bp Optional integer vector of base-pair positions. When given,
+//'   only reference SNPs at these positions are read and used, which avoids
+//'   reading genotypes and computing LD for SNPs that will be discarded (e.g.
+//'   when restricting a panel to HapMap3 SNPs). Positions only: allele
+//'   matching at multi-allelic sites is left to the caller.
+//' @param min_snps Minimum number of SNPs that must survive filtering, else an
+//'   "insufficient SNPs" error is raised. Defaults to 2; 1 allows single-SNP
+//'   (1x1) blocks.
 //' @return A list with `snplist` (data frame: rsid, chr, bp, a1, a2, af1pop)
 //'   and `cormat` (signed correlation matrix).
 // [[Rcpp::export]]
@@ -65,11 +73,17 @@ Rcpp::List computeSuperPopLDWindow(
     std::string reference_data_file,
     std::string reference_pop_desc_file,
     Rcpp::Nullable<double> maf_cutoff = R_NilValue,
-    Rcpp::Nullable<double> missing_cutoff = R_NilValue) {
+    Rcpp::Nullable<double> missing_cutoff = R_NilValue,
+    Rcpp::Nullable<Rcpp::IntegerVector> keep_bp = R_NilValue,
+    int min_snps = 2) {
 
   if (start_bp > end_bp) {
     Rcpp::stop("Invalid region: 'start_bp' must be <= 'end_bp'.");
   }
+  if (min_snps < 1) {
+    Rcpp::stop("Invalid 'min_snps': must be at least 1.");
+  }
+  const size_t min_kept = static_cast<size_t>(min_snps);
 
   const double maf_min = maf_cutoff.isNotNull() ? Rcpp::as<double>(maf_cutoff) : 0.01;
   const double missing_max = missing_cutoff.isNotNull() ? Rcpp::as<double>(missing_cutoff) : 1.0;
@@ -126,7 +140,19 @@ Rcpp::List computeSuperPopLDWindow(
 
   ReadReferenceIndex(snp_map, args);
 
+  // SNPs left out here stay in snp_map, so the cleanup still deletes them; they
+  // never have genotypes loaded, so leaving them out of snp_vec is safe.
+  std::vector<long long int> keep;
+  const bool filter_bp = keep_bp.isNotNull();
+  if (filter_bp) {
+    Rcpp::IntegerVector kb(keep_bp);
+    keep.assign(kb.begin(), kb.end());
+    std::sort(keep.begin(), keep.end());
+  }
   for (std::map<MapKey, Snp*, LessThanMapKey>::iterator it = snp_map.begin(); it != snp_map.end(); ++it) {
+    if (filter_bp && !std::binary_search(keep.begin(), keep.end(), static_cast<long long int>(it->second->GetBp()))) {
+      continue;
+    }
     snp_vec.push_back(it->second);
   }
 
@@ -184,8 +210,8 @@ Rcpp::List computeSuperPopLDWindow(
     }
   }
 
-  if (qc_snps.size() < 2) {
-    Rcpp::stop("Fewer than 2 SNPs remain after missingness/MAF filtering.");
+  if (qc_snps.size() < min_kept) {
+    Rcpp::stop("Fewer than " + std::to_string(min_snps) + " SNPs remain after missingness/MAF filtering.");
   }
 
   std::vector<Snp*> kept_snps;
@@ -226,8 +252,8 @@ Rcpp::List computeSuperPopLDWindow(
     snp_sd.push_back(std::sqrt(v));
   }
 
-  if (kept_snps.size() < 2) {
-    Rcpp::stop("Fewer than 2 SNPs remain after variance/non-missing genotype checks.");
+  if (kept_snps.size() < min_kept) {
+    Rcpp::stop("Fewer than " + std::to_string(min_snps) + " SNPs remain after variance/non-missing genotype checks.");
   }
 
   const int m = static_cast<int>(kept_snps.size());
