@@ -65,8 +65,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // computeSuperPopLDWindow
-Rcpp::List computeSuperPopLDWindow(int chr, long long int start_bp, long long int end_bp, std::string superpopulation_label, std::string reference_index_file, std::string reference_data_file, std::string reference_pop_desc_file, Rcpp::Nullable<double> maf_cutoff, Rcpp::Nullable<double> missing_cutoff);
-RcppExport SEXP _gauss_computeSuperPopLDWindow(SEXP chrSEXP, SEXP start_bpSEXP, SEXP end_bpSEXP, SEXP superpopulation_labelSEXP, SEXP reference_index_fileSEXP, SEXP reference_data_fileSEXP, SEXP reference_pop_desc_fileSEXP, SEXP maf_cutoffSEXP, SEXP missing_cutoffSEXP) {
+Rcpp::List computeSuperPopLDWindow(int chr, long long int start_bp, long long int end_bp, std::string superpopulation_label, std::string reference_index_file, std::string reference_data_file, std::string reference_pop_desc_file, Rcpp::Nullable<double> maf_cutoff, Rcpp::Nullable<double> missing_cutoff, Rcpp::Nullable<Rcpp::IntegerVector> keep_bp, int min_snps);
+RcppExport SEXP _gauss_computeSuperPopLDWindow(SEXP chrSEXP, SEXP start_bpSEXP, SEXP end_bpSEXP, SEXP superpopulation_labelSEXP, SEXP reference_index_fileSEXP, SEXP reference_data_fileSEXP, SEXP reference_pop_desc_fileSEXP, SEXP maf_cutoffSEXP, SEXP missing_cutoffSEXP, SEXP keep_bpSEXP, SEXP min_snpsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -79,7 +79,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type reference_pop_desc_file(reference_pop_desc_fileSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<double> >::type maf_cutoff(maf_cutoffSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<double> >::type missing_cutoff(missing_cutoffSEXP);
-    rcpp_result_gen = Rcpp::wrap(computeSuperPopLDWindow(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff, missing_cutoff));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type keep_bp(keep_bpSEXP);
+    Rcpp::traits::input_parameter< int >::type min_snps(min_snpsSEXP);
+    rcpp_result_gen = Rcpp::wrap(computeSuperPopLDWindow(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff, missing_cutoff, keep_bp, min_snps));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -372,7 +374,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gauss_afmix", (DL_FUNC) &_gauss_afmix, 5},
     {"_gauss_computeLD", (DL_FUNC) &_gauss_computeLD, 9},
     {"_gauss_computePopLDWindow", (DL_FUNC) &_gauss_computePopLDWindow, 9},
-    {"_gauss_computeSuperPopLDWindow", (DL_FUNC) &_gauss_computeSuperPopLDWindow, 9},
+    {"_gauss_computeSuperPopLDWindow", (DL_FUNC) &_gauss_computeSuperPopLDWindow, 11},
     {"_gauss_cpw2", (DL_FUNC) &_gauss_cpw2, 5},
     {"_gauss_dist", (DL_FUNC) &_gauss_dist, 10},
     {"_gauss_distmix", (DL_FUNC) &_gauss_distmix, 10},

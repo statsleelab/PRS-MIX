@@ -66,10 +66,18 @@ computePopLDWindow <- function(chr, start_bp, end_bp, population_index, referenc
 #' @param reference_pop_desc_file Reference panel population description file.
 #' @param maf_cutoff Optional MAF threshold. Defaults to 0.01.
 #' @param missing_cutoff Optional missingness threshold in [0,1]. Defaults to 1.0.
+#' @param keep_bp Optional integer vector of base-pair positions. When given,
+#'   only reference SNPs at these positions are read and used, which avoids
+#'   reading genotypes and computing LD for SNPs that will be discarded (e.g.
+#'   when restricting a panel to HapMap3 SNPs). Positions only: allele
+#'   matching at multi-allelic sites is left to the caller.
+#' @param min_snps Minimum number of SNPs that must survive filtering, else an
+#'   "insufficient SNPs" error is raised. Defaults to 2; 1 allows single-SNP
+#'   (1x1) blocks.
 #' @return A list with `snplist` (data frame: rsid, chr, bp, a1, a2, af1pop)
 #'   and `cormat` (signed correlation matrix).
-computeSuperPopLDWindow <- function(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff = NULL, missing_cutoff = NULL) {
-    .Call(`_gauss_computeSuperPopLDWindow`, chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff, missing_cutoff)
+computeSuperPopLDWindow <- function(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff = NULL, missing_cutoff = NULL, keep_bp = NULL, min_snps = 2L) {
+    .Call(`_gauss_computeSuperPopLDWindow`, chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff, missing_cutoff, keep_bp, min_snps)
 }
 
 #' Calculate population weights using RAF

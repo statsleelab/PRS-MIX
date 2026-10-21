@@ -25,7 +25,7 @@
 .mock_compute_superpop_ld_window <- function(chr, start_bp, end_bp, superpopulation_label,
                                              reference_index_file, reference_data_file,
                                              reference_pop_desc_file, maf_cutoff = NULL,
-                                             missing_cutoff = NULL) {
+                                             missing_cutoff = NULL, min_snps = 2L, ...) {
   if (identical(superpopulation_label, "ZZZ")) {
     stop("Invalid superpopulation label: no reference populations selected.")
   }
@@ -34,8 +34,8 @@
   if (nrow(sub) == 0) {
     stop("No SNPs found in requested region for provided reference index.")
   }
-  if (nrow(sub) < 2) {
-    stop("Fewer than 2 SNPs remain after missingness/MAF filtering.")
+  if (nrow(sub) < min_snps) {
+    stop(sprintf("Fewer than %d SNPs remain after missingness/MAF filtering.", min_snps))
   }
   m <- nrow(sub)
   cormat <- matrix(0.3, m, m)
@@ -332,7 +332,7 @@ test_that("dry_run returns block boundaries and raw SNP counts without touching 
 .mock_compute_superpop_ld_window_by_pop <- function(chr, start_bp, end_bp, superpopulation_label,
                                                      reference_index_file, reference_data_file,
                                                      reference_pop_desc_file, maf_cutoff = NULL,
-                                                     missing_cutoff = NULL) {
+                                                     missing_cutoff = NULL, min_snps = 2L, ...) {
   pool <- data.frame(
     rsid = c("rs1", "rs2", "rs3", "rs4", "rs5"),
     chr = rep(1L, 5),
@@ -353,8 +353,8 @@ test_that("dry_run returns block boundaries and raw SNP counts without touching 
   if (nrow(sub) == 0) {
     stop("No SNPs found in requested region for provided reference index.")
   }
-  if (nrow(sub) < 2) {
-    stop("Fewer than 2 SNPs remain after missingness/MAF filtering.")
+  if (nrow(sub) < min_snps) {
+    stop(sprintf("Fewer than %d SNPs remain after missingness/MAF filtering.", min_snps))
   }
   m <- nrow(sub)
   cormat <- matrix(0.3, m, m)
@@ -420,14 +420,19 @@ test_that("generate_prscs_ld_panels reconciles per-population MAF-driven SNP mis
   expect_equal(dim(h5_eur[["blk_1"]][["ldblk"]]$read()), c(2L, 2L))
   expect_equal(dim(h5_afr[["blk_1"]][["ldblk"]]$read()), c(2L, 2L))
 
-  # blk_5 (rs5 alone) has <2 SNPs in every population -> stub block in both.
-  expect_equal(h5_eur[["blk_5"]]$attr_open("m_snps")$read(), 0L)
-  expect_equal(h5_afr[["blk_5"]]$attr_open("m_snps")$read(), 0L)
+  # blk_5 holds rs5 alone in every population -> kept as a 1x1 block in both,
+  # so whether a SNP survives doesn't depend on where block boundaries fall.
+  expect_equal(h5_eur[["blk_5"]]$attr_open("m_snps")$read(), 1L)
+  expect_equal(h5_afr[["blk_5"]]$attr_open("m_snps")$read(), 1L)
+  # Stored as a 1x1 matrix (PRS-CS indexes ldblk as 2-D); hdf5r drops dims on read.
+  expect_equal(h5_eur[["blk_5"]][["ldblk"]]$dims, c(1L, 1L))
+  expect_equal(as.vector(h5_eur[["blk_5"]][["ldblk"]]$read()), 1)
+  expect_equal(h5_eur[["blk_4"]]$attr_open("m_snps")$read(), 0L)
 
   snpinfo_eur <- read.table(file.path(panel_dirs$EUR, "snpinfo_1kg_hm3"), header = TRUE, stringsAsFactors = FALSE)
   snpinfo_afr <- read.table(file.path(panel_dirs$AFR, "snpinfo_1kg_hm3"), header = TRUE, stringsAsFactors = FALSE)
-  expect_setequal(snpinfo_eur$SNP, c("rs2", "rs3"))
-  expect_setequal(snpinfo_afr$SNP, c("rs2", "rs3"))
+  expect_setequal(snpinfo_eur$SNP, c("rs2", "rs3", "rs5"))
+  expect_setequal(snpinfo_afr$SNP, c("rs2", "rs3", "rs5"))
 })
 
 test_that("generate_prscs_ld_panels disambiguates duplicate/placeholder rsids by (bp, a1, a2)", {
@@ -443,7 +448,7 @@ test_that("generate_prscs_ld_panels disambiguates duplicate/placeholder rsids by
   .mock_dup_rsid <- function(chr, start_bp, end_bp, superpopulation_label,
                              reference_index_file, reference_data_file,
                              reference_pop_desc_file, maf_cutoff = NULL,
-                             missing_cutoff = NULL) {
+                             missing_cutoff = NULL, min_snps = 2L, ...) {
     pool <- data.frame(
       rsid = c(".", ".", "rs3"),
       chr = rep(1L, 3),
@@ -457,8 +462,8 @@ test_that("generate_prscs_ld_panels disambiguates duplicate/placeholder rsids by
     if (identical(superpopulation_label, "AFR")) {
       sub <- sub[sub$bp != 10L, , drop = FALSE]
     }
-    if (nrow(sub) < 2) {
-      stop("Fewer than 2 SNPs remain after missingness/MAF filtering.")
+    if (nrow(sub) < min_snps) {
+      stop(sprintf("Fewer than %d SNPs remain after missingness/MAF filtering.", min_snps))
     }
     m <- nrow(sub)
     cormat <- matrix(0.3, m, m)
@@ -608,4 +613,139 @@ test_that("write_prscs_ld_chr validation requires panel_dir to already exist", {
     ),
     "'panel_dir' does not exist"
   )
+})
+
+# Custom blocks and SNP filter ---------------------------------------------
+
+.write_toy_prscs_ref <- function(dir) {
+  dir.create(dir)
+  writeLines(c("CHR\tSNP\tBP\tA1\tA2\tMAF",
+               "1\trsA\t100\tA\tG\t0.2", "1\trsB\t200\tC\tT\t0.2",
+               "1\trsC\t400\tG\tA\t0.2", "1\trsD\t600\tT\tC\t0.2"),
+             file.path(dir, "snpinfo_1kg_hm3"))
+  h5 <- hdf5r::H5File$new(file.path(dir, "ldblk_1kg_chr1.hdf5"), mode = "w")
+  on.exit(h5$close_all())
+  g1 <- h5$create_group("blk_1")
+  g1[["snplist"]] <- c("rsA", "rsB")
+  g2 <- h5$create_group("blk_2")
+  g2[["snplist"]] <- c("rsC", "rsD")
+}
+
+test_that("read_prscs_block_boundaries tiles the chromosome at midpoints between published blocks", {
+  skip_if_not_installed("hdf5r")
+  ref <- file.path(tempfile("prscsref"), "ldblk_1kg_eur")
+  dir.create(dirname(ref))
+  .write_toy_prscs_ref(ref)
+
+  b <- read_prscs_block_boundaries(ref, chromosomes = 1)
+  # Block 1 spans SNPs at 100-200, block 2 at 400-600: the cut is at 300.
+  expect_equal(b$start_bp, c(1L, 301L))
+  expect_equal(b$end_bp, c(300L, .Machine$integer.max))
+  expect_equal(b$block, 1:2)
+})
+
+.mock_ld_window_keep_bp <- function(chr, start_bp, end_bp, superpopulation_label,
+                                    reference_index_file, reference_data_file,
+                                    reference_pop_desc_file, maf_cutoff = NULL,
+                                    missing_cutoff = NULL, keep_bp = NULL, min_snps = 2L, ...) {
+  pool <- .mock_snp_pool()
+  sub <- pool[pool$chr == chr & pool$bp >= start_bp & pool$bp <= end_bp, , drop = FALSE]
+  if (!is.null(keep_bp)) sub <- sub[sub$bp %in% keep_bp, , drop = FALSE]
+  if (nrow(sub) == 0) stop("No SNPs found in requested region for provided reference index.")
+  if (nrow(sub) < min_snps) stop(sprintf("Fewer than %d SNPs remain after missingness/MAF filtering.", min_snps))
+  m <- nrow(sub)
+  cormat <- matrix(0.3, m, m)
+  diag(cormat) <- 1
+  list(snplist = sub, cormat = cormat)
+}
+
+test_that("generate_prscs_ld_panels uses supplied blocks and keeps only filter SNPs", {
+  skip_if_not_installed("hdf5r")
+  td <- tempfile("gausstest"); dir.create(td)
+  idx_path <- file.path(td, "toy_index.gz")
+  geno_path <- file.path(td, "toy_geno.gz")
+  pop_desc_path <- file.path(td, "toy_pop_desc.txt")
+  .write_toy_index(idx_path)
+  .write_dummy_file(geno_path)
+  .write_toy_pop_desc(pop_desc_path)
+  testthat::local_mocked_bindings(computeSuperPopLDWindow = .mock_ld_window_keep_bp)
+
+  # Pool bp: 10, 20, 150, 160, 170, 500. Two custom blocks instead of tiles.
+  blocks <- data.frame(chr = 1, start_bp = c(1, 100), end_bp = c(99, 1000))
+  # rs3 is listed with alleles swapped (A/G vs reference G/A) and must still
+  # match; rs4 at the right bp but with the wrong alleles must not.
+  snp_filter <- data.frame(CHR = 1, BP = c(10, 20, 150, 160, 170),
+                           A1 = c("A", "C", "A", "G", "A"), A2 = c("G", "T", "G", "A", "G"))
+
+  dirs <- generate_prscs_ld_panels(
+    reference_index_file = idx_path, reference_data_file = geno_path,
+    reference_pop_desc_file = pop_desc_path, superpopulation_labels = c("EUR", "AFR"),
+    output_dir = file.path(td, "out"), chromosomes = 1,
+    blocks = blocks, snp_filter = snp_filter, verbose = FALSE
+  )
+
+  h5 <- hdf5r::H5File$new(file.path(dirs$EUR, "ldblk_1kg_chr1.hdf5"), mode = "r")
+  on.exit(h5$close_all(), add = TRUE)
+  expect_equal(h5$attr_open("n_blocks")$read(), 2L)
+  expect_equal(h5$attr_open("block_partition")$read(), "custom")
+  expect_false(h5$attr_exists("block_bp"))
+  expect_equal(h5[["blk_1"]][["snplist"]]$read(), c("rs1", "rs2"))
+  expect_equal(h5[["blk_2"]][["snplist"]]$read(), c("rs3", "rs5"))
+  expect_equal(h5[["blk_2"]]$attr_open("start_bp")$read(), 100L)
+})
+
+test_that("generate_prscs_ld_panels rejects invalid blocks and SNP filters", {
+  td <- tempfile("gausstest"); dir.create(td)
+  idx_path <- file.path(td, "toy_index.gz")
+  geno_path <- file.path(td, "toy_geno.gz")
+  pop_desc_path <- file.path(td, "toy_pop_desc.txt")
+  .write_toy_index(idx_path)
+  .write_dummy_file(geno_path)
+  .write_toy_pop_desc(pop_desc_path)
+  run <- function(...) generate_prscs_ld_panels(
+    reference_index_file = idx_path, reference_data_file = geno_path,
+    reference_pop_desc_file = pop_desc_path, superpopulation_labels = c("EUR", "AFR"),
+    output_dir = file.path(td, "out"), chromosomes = 1, verbose = FALSE, ...)
+
+  expect_error(run(blocks = data.frame(chr = 1, start_bp = c(1, 50), end_bp = c(60, 100))),
+               "overlap")
+  expect_error(run(blocks = data.frame(chr = 2, start_bp = 1, end_bp = 100)),
+               "no rows for chromosome")
+  expect_error(run(blocks = data.frame(chr = 1, start = 1, end = 100)),
+               "columns chr, start_bp, end_bp")
+  expect_error(run(blocks = data.frame(chr = 1, start_bp = c(1, 200), end_bp = c(100, 1000))),
+               "gap")
+  expect_error(run(snp_filter = data.frame(chr = 1, bp = 10)),
+               "columns chr, bp, a1, a2")
+  expect_error(run(snp_filter = file.path(td, "no_such_file")), "does not exist")
+})
+
+test_that("fixed tiles and custom blocks retain the same SNPs", {
+  skip_if_not_installed("hdf5r")
+  td <- tempfile("gausstest"); dir.create(td)
+  idx_path <- file.path(td, "toy_index.gz")
+  geno_path <- file.path(td, "toy_geno.gz")
+  pop_desc_path <- file.path(td, "toy_pop_desc.txt")
+  .write_toy_index(idx_path)
+  .write_dummy_file(geno_path)
+  .write_toy_pop_desc(pop_desc_path)
+  testthat::local_mocked_bindings(computeSuperPopLDWindow = .mock_ld_window_keep_bp)
+  # Filter file in PRS-CS snpinfo layout; rs6 (bp 500) sits alone in its tile.
+  filter_path <- file.path(td, "snpinfo_1kg_hm3")
+  write.table(data.frame(CHR = 1, SNP = c("rs1", "rs3", "rs6"), BP = c(10, 150, 500),
+                         A1 = c("A", "G", "C"), A2 = c("G", "A", "T"), MAF = 0.2),
+              filter_path, sep = "\t", quote = FALSE, row.names = FALSE)
+  build <- function(out, ...) generate_prscs_ld_panels(
+    reference_index_file = idx_path, reference_data_file = geno_path,
+    reference_pop_desc_file = pop_desc_path, superpopulation_labels = c("EUR", "AFR"),
+    output_dir = file.path(td, out), chromosomes = 1, verbose = FALSE,
+    snp_filter = filter_path, ...)
+
+  fixed <- build("fixed", block_size = 100)
+  custom <- build("custom", blocks = data.frame(chr = 1, start_bp = 1, end_bp = 1000))
+  read_info <- function(d) read.table(file.path(d, "snpinfo_1kg_hm3"), header = TRUE, stringsAsFactors = FALSE)
+  # Fixed tiles put each filter SNP in its own block; the custom block holds all
+  # three. Both must keep the same SNPs, in the same order.
+  expect_identical(read_info(fixed$EUR), read_info(custom$EUR))
+  expect_equal(read_info(fixed$EUR)$SNP, c("rs1", "rs3", "rs6"))
 })

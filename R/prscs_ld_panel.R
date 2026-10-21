@@ -409,6 +409,7 @@ generate_prscs_ld_panel <- function(reference_index_file,
 #'   under.
 #' @param chromosomes Integer vector of chromosomes to process. Defaults to 1:22.
 #' @param block_size Block size in base pairs (see \code{\link{write_prscs_ld_chr}}).
+#'   Ignored when `blocks` is supplied.
 #' @param maf_cutoff Minimum minor allele frequency filter, applied per
 #'   population before reconciliation. Defaults to 0.01.
 #' @param missing_cutoff Maximum allowed missing genotype fraction per SNP.
@@ -422,6 +423,17 @@ generate_prscs_ld_panel <- function(reference_index_file,
 #' @param max_blocks_per_chr Optional cap on number of blocks per chromosome
 #'   (useful for examples/tests).
 #' @param verbose Logical; print progress messages.
+#' @param blocks Optional data frame of block ranges (columns `chr`, `start_bp`,
+#'   `end_bp`) to use instead of fixed `block_size` tiles, e.g. the cut points
+#'   returned by \code{\link{read_prscs_block_boundaries}}. Every population
+#'   gets the same blocks. Must cover every chromosome in `chromosomes`, with
+#'   non-overlapping blocks.
+#' @param snp_filter Optional SNPs to keep: a data frame with columns `chr`,
+#'   `bp`, `a1`, `a2` (in any case), or the path to such a whitespace-delimited
+#'   file with a header -- e.g. PRS-CS's `snpinfo_1kg_hm3`, which works as-is,
+#'   e.g. to restrict panels to HapMap3 SNPs as PRS-CS's own panels are. SNPs
+#'   are matched by position and allele pair in either orientation, and
+#'   unmatched SNPs are skipped before genotypes are read.
 #'
 #' @return Invisibly, a named list of panel directory paths, one per
 #'   (uppercased) superpopulation label.
@@ -439,7 +451,9 @@ generate_prscs_ld_panels <- function(reference_index_file,
                                      min_eigenvalue = 1e-8,
                                      panel_names = NULL,
                                      max_blocks_per_chr = NULL,
-                                     verbose = TRUE) {
+                                     verbose = TRUE,
+                                     blocks = NULL,
+                                     snp_filter = NULL) {
   .validate_prscs_panels_args(
     reference_index_file = reference_index_file,
     reference_data_file = reference_data_file,
@@ -455,6 +469,8 @@ generate_prscs_ld_panels <- function(reference_index_file,
     max_blocks_per_chr = max_blocks_per_chr,
     verbose = verbose
   )
+  if (!is.null(blocks)) blocks <- .normalize_blocks(blocks, chromosomes)
+  if (!is.null(snp_filter)) snp_filter <- .normalize_snp_filter(snp_filter)
 
   if (!requireNamespace("hdf5r", quietly = TRUE)) {
     stop("Package 'hdf5r' is required. Please install it with install.packages('hdf5r').", call. = FALSE)
@@ -489,6 +505,8 @@ generate_prscs_ld_panels <- function(reference_index_file,
       reference_data_file = reference_data_file,
       reference_pop_desc_file = reference_pop_desc_file,
       block_size = block_size,
+      blocks = blocks,
+      snp_filter = snp_filter,
       maf_cutoff = maf_cutoff,
       missing_cutoff = missing_cutoff,
       shrinkage = shrinkage,
@@ -694,6 +712,171 @@ generate_prscs_ld_panels <- function(reference_index_file,
   }
 }
 
+#' Read block boundaries from a published PRS-CS reference panel
+#'
+#' Infers the LD block partition used by one of PRS-CS's published reference
+#' panels (e.g. `ldblk_1kg_eur`, whose blocks are approximately independent LD
+#' blocks from LDetect) as contiguous base-pair ranges, so the same cut points
+#' can be reused for every population passed to
+#' \code{\link{generate_prscs_ld_panels}} via its `blocks` argument. Only the
+#' cut points are taken from the published panel; its LD values are not used.
+#'
+#' The cut points are inferred from the panel's SNP positions, not read from
+#' the original LDetect coordinates: any cut between two published blocks'
+#' SNPs gives the same assignment of those SNPs, but SNPs absent from the
+#' published panel that fall between two blocks may land on either side.
+#'
+#' Each block's extent is the range of its SNPs' positions (looked up in the
+#' panel's own snpinfo file). Adjacent blocks are joined at the midpoint between
+#' the last SNP of one block and the first SNP of the next, and the first and
+#' last blocks are extended to the chromosome ends, so the returned ranges tile
+#' the whole chromosome without gaps or overlaps.
+#'
+#' @param prscs_ref_dir Directory of a published PRS-CS panel, containing
+#'   `ldblk_1kg_chr<chr>.hdf5` (or `ldblk_ukbb_chr<chr>.hdf5`) files and the
+#'   matching `snpinfo_1kg_hm3` (or `snpinfo_ukbb_hm3`) file.
+#' @param chromosomes Integer vector of chromosomes to read. Defaults to 1:22.
+#'
+#' @return A data frame with columns `chr`, `block`, `start_bp`, `end_bp`.
+#' @export
+read_prscs_block_boundaries <- function(prscs_ref_dir, chromosomes = 1:22) {
+  if (!is.character(prscs_ref_dir) || length(prscs_ref_dir) != 1 || !dir.exists(prscs_ref_dir)) {
+    stop("'prscs_ref_dir' must be an existing directory.", call. = FALSE)
+  }
+  if (!requireNamespace("hdf5r", quietly = TRUE)) {
+    stop("Package 'hdf5r' is required. Please install it with install.packages('hdf5r').", call. = FALSE)
+  }
+  tag <- if (grepl("ukbb", basename(prscs_ref_dir))) "ukbb" else "1kg"
+  snpinfo_path <- file.path(prscs_ref_dir, sprintf("snpinfo_%s_hm3", tag))
+  if (!file.exists(snpinfo_path)) {
+    stop(sprintf("snpinfo file not found: %s", snpinfo_path), call. = FALSE)
+  }
+  snpinfo <- utils::read.table(snpinfo_path, header = TRUE, stringsAsFactors = FALSE)
+
+  parts <- lapply(chromosomes, function(chr) {
+    h5_path <- file.path(prscs_ref_dir, sprintf("ldblk_%s_chr%d.hdf5", tag, chr))
+    if (!file.exists(h5_path)) {
+      stop(sprintf("LD block file not found: %s", h5_path), call. = FALSE)
+    }
+    info <- snpinfo[snpinfo$CHR == chr, , drop = FALSE]
+    bp_by_snp <- stats::setNames(info$BP, info$SNP)
+
+    h5 <- hdf5r::H5File$new(h5_path, mode = "r")
+    on.exit(h5$close_all())
+    blks <- grep("^blk_", names(h5), value = TRUE)
+    blks <- blks[order(as.integer(sub("blk_", "", blks)))]
+    snps_by_blk <- lapply(blks, function(b) h5[[b]][["snplist"]]$read())
+    unmapped <- setdiff(unlist(snps_by_blk), names(bp_by_snp))
+    if (length(unmapped) > 0) {
+      stop(sprintf("%d SNP(s) in %s have no position in %s (e.g. %s).", length(unmapped),
+        basename(h5_path), basename(snpinfo_path), unmapped[1]), call. = FALSE)
+    }
+    bp_by_blk <- lapply(snps_by_blk, function(x) unname(bp_by_snp[x]))
+    rng <- do.call(rbind, lapply(bp_by_blk, function(bp) if (length(bp) == 0) NULL else range(bp)))
+    if (is.null(rng) || nrow(rng) == 0) {
+      stop(sprintf("No blocks with known SNP positions on chromosome %d in %s.", chr, prscs_ref_dir), call. = FALSE)
+    }
+    n <- nrow(rng)
+    if (n > 1 && any(rng[-1, 1] <= rng[-n, 2])) {
+      stop(sprintf("Blocks on chromosome %d in %s are not ordered and non-overlapping.", chr, prscs_ref_dir), call. = FALSE)
+    }
+
+    cuts <- floor((rng[-n, 2] + rng[-1, 1]) / 2)
+    out <- data.frame(
+      chr = as.integer(chr),
+      block = seq_len(n),
+      start_bp = as.integer(c(1, cuts + 1)),
+      end_bp = as.integer(c(cuts, .Machine$integer.max)),
+      stringsAsFactors = FALSE
+    )
+
+    # Every published SNP must land back in the block it came from.
+    bp_all <- unlist(bp_by_blk)
+    blk_all <- rep(seq_along(bp_by_blk), lengths(bp_by_blk))
+    blk_all <- match(blk_all, which(lengths(bp_by_blk) > 0))
+    if (!identical(findInterval(bp_all, out$start_bp), blk_all)) {
+      stop(sprintf("Inferred blocks on chromosome %d do not reproduce the published SNP-to-block assignment.", chr),
+        call. = FALSE)
+    }
+    out
+  })
+  do.call(rbind, parts)
+}
+
+# Validates a user-supplied block table (chr, start_bp, end_bp) and returns it
+# with integer columns, sorted by chr then start_bp.
+.normalize_blocks <- function(blocks, chromosomes) {
+  if (!is.data.frame(blocks) || !all(c("chr", "start_bp", "end_bp") %in% names(blocks))) {
+    stop("'blocks' must be a data frame with columns chr, start_bp, end_bp.", call. = FALSE)
+  }
+  out <- data.frame(
+    chr = as.integer(blocks$chr),
+    start_bp = as.integer(blocks$start_bp),
+    end_bp = as.integer(blocks$end_bp)
+  )
+  if (anyNA(out) || any(out$start_bp > out$end_bp)) {
+    stop("'blocks' must have non-missing positions with start_bp <= end_bp.", call. = FALSE)
+  }
+  missing_chr <- setdiff(as.integer(chromosomes), out$chr)
+  if (length(missing_chr) > 0) {
+    stop(sprintf("'blocks' has no rows for chromosome(s): %s", paste(missing_chr, collapse = ", ")), call. = FALSE)
+  }
+  out <- out[order(out$chr, out$start_bp), , drop = FALSE]
+  for (chr in unique(out$chr)) {
+    b <- out[out$chr == chr, , drop = FALSE]
+    if (nrow(b) > 1 && any(b$start_bp[-1] <= b$end_bp[-nrow(b)])) {
+      stop(sprintf("'blocks' overlap on chromosome %d; blocks must be non-overlapping.", chr), call. = FALSE)
+    }
+    # A gap would silently leave its SNPs out of every panel.
+    if (nrow(b) > 1 && any(b$start_bp[-1] != b$end_bp[-nrow(b)] + 1L)) {
+      stop(sprintf("'blocks' have a gap on chromosome %d; blocks must be contiguous.", chr), call. = FALSE)
+    }
+  }
+  rownames(out) <- NULL
+  out
+}
+
+# Normalizes a SNP filter (e.g. a PRS-CS snpinfo_1kg_hm3 table, columns
+# CHR/BP/A1/A2 in any case) to chr, bp, and an allele-order-free key.
+.normalize_snp_filter <- function(snp_filter) {
+  if (is.character(snp_filter) && length(snp_filter) == 1) {
+    if (!file.exists(snp_filter)) {
+      stop(sprintf("'snp_filter' file does not exist: %s", snp_filter), call. = FALSE)
+    }
+    snp_filter <- utils::read.table(snp_filter, header = TRUE, stringsAsFactors = FALSE)
+  }
+  if (!is.data.frame(snp_filter)) {
+    stop("'snp_filter' must be a data frame (or file path) with columns chr, bp, a1, a2.", call. = FALSE)
+  }
+  names(snp_filter) <- tolower(names(snp_filter))
+  if (!all(c("chr", "bp", "a1", "a2") %in% names(snp_filter))) {
+    stop("'snp_filter' must be a data frame (or file path) with columns chr, bp, a1, a2.", call. = FALSE)
+  }
+  data.frame(
+    chr = as.integer(snp_filter$chr),
+    bp = as.integer(snp_filter$bp),
+    key = .allele_free_key(snp_filter$bp, snp_filter$a1, snp_filter$a2),
+    stringsAsFactors = FALSE
+  )
+}
+
+# Identifies a SNP by position and its allele pair in either orientation, so a
+# filter matches the reference regardless of which allele each source lists first.
+.allele_free_key <- function(bp, a1, a2) {
+  a1 <- toupper(a1)
+  a2 <- toupper(a2)
+  paste(bp, pmin(a1, a2), pmax(a1, a2), sep = ":")
+}
+
+# MD5 of a character vector (one element per line), for recording exactly which
+# SNP filter or block table a panel was built with.
+.md5_of <- function(x) {
+  f <- tempfile()
+  on.exit(unlink(f))
+  writeLines(as.character(x), f)
+  unname(tools::md5sum(f))
+}
+
 .h5_write_attr <- function(h5obj, name, value) {
   h5obj$create_attr(name, value, dtype = hdf5r::guess_dtype(value))
 }
@@ -748,7 +931,7 @@ generate_prscs_ld_panels <- function(reference_index_file,
 # panel built against the same reference_index_file/block_size (see
 # write_prscs_ld_chr's roxygen for why alignment matters). Any other error
 # message is rethrown as-is.
-.insufficient_snps_pattern <- "No SNPs found in requested region|Fewer than 2 SNPs remain"
+.insufficient_snps_pattern <- "No SNPs found in requested region|Fewer than [0-9]+ SNPs remain"
 
 .compute_and_write_ld_block <- function(blk_group, chr, start_bp, end_bp, ld_window_fn, shrinkage, min_eigenvalue) {
   res <- tryCatch(
@@ -803,17 +986,24 @@ generate_prscs_ld_panels <- function(reference_index_file,
                                         reference_index_file, reference_data_file,
                                         reference_pop_desc_file, block_size,
                                         maf_cutoff, missing_cutoff, shrinkage,
-                                        min_eigenvalue, max_blocks, idx, verbose) {
+                                        min_eigenvalue, max_blocks, idx, verbose,
+                                        blocks = NULL, snp_filter = NULL) {
   idx_chr <- idx[idx$chr == chr, , drop = FALSE]
   if (nrow(idx_chr) == 0) {
     stop(sprintf("No SNPs found for chromosome %s in index file: %s", chr, reference_index_file), call. = FALSE)
   }
   idx_chr <- idx_chr[order(idx_chr$bp), , drop = FALSE]
 
-  blocks <- .build_contiguous_blocks(idx_chr$bp, block_size = block_size)
+  custom_blocks <- !is.null(blocks)
+  if (custom_blocks) {
+    blocks <- blocks[blocks$chr == chr, c("start_bp", "end_bp"), drop = FALSE]
+  } else {
+    blocks <- .build_contiguous_blocks(idx_chr$bp, block_size = block_size)
+  }
   if (!is.null(max_blocks)) {
     blocks <- blocks[seq_len(min(nrow(blocks), max_blocks)), , drop = FALSE]
   }
+  chr_filter <- if (is.null(snp_filter)) NULL else snp_filter[snp_filter$chr == chr, , drop = FALSE]
 
   h5_by_pop <- stats::setNames(vector("list", length(labels)), labels)
   on.exit({
@@ -830,7 +1020,16 @@ generate_prscs_ld_panels <- function(reference_index_file,
 
     .h5_write_attr(h5, "panel_name", panel_names[[label]])
     .h5_write_attr(h5, "chr", as.integer(chr))
-    .h5_write_attr(h5, "block_bp", as.integer(block_size))
+    .h5_write_attr(h5, "block_partition", if (custom_blocks) "custom" else "fixed")
+    if (!custom_blocks) .h5_write_attr(h5, "block_bp", as.integer(block_size))
+    .h5_write_attr(h5, "snp_filter", !is.null(chr_filter))
+    if (!is.null(chr_filter)) {
+      .h5_write_attr(h5, "snp_filter_n", as.integer(nrow(chr_filter)))
+      .h5_write_attr(h5, "snp_filter_md5", .md5_of(sort(chr_filter$key)))
+    }
+    if (custom_blocks) {
+      .h5_write_attr(h5, "blocks_md5", .md5_of(paste(blocks$start_bp, blocks$end_bp, sep = "-")))
+    }
     .h5_write_attr(h5, "maf_cutoff", as.numeric(maf_cutoff))
     .h5_write_attr(h5, "missing_cutoff", as.numeric(missing_cutoff))
     .h5_write_attr(h5, "shrinkage_lambda", as.numeric(shrinkage))
@@ -871,7 +1070,8 @@ generate_prscs_ld_panels <- function(reference_index_file,
       maf_cutoff = maf_cutoff,
       missing_cutoff = missing_cutoff,
       shrinkage = shrinkage,
-      min_eigenvalue = min_eigenvalue
+      min_eigenvalue = min_eigenvalue,
+      snp_filter = chr_filter
     )
 
     for (label in labels) {
@@ -898,21 +1098,33 @@ generate_prscs_ld_panels <- function(reference_index_file,
 .compute_and_write_aligned_ld_block <- function(blk_groups, chr, start_bp, end_bp, labels,
                                                 reference_index_file, reference_data_file,
                                                 reference_pop_desc_file, maf_cutoff,
-                                                missing_cutoff, shrinkage, min_eigenvalue) {
+                                                missing_cutoff, shrinkage, min_eigenvalue,
+                                                snp_filter = NULL) {
+  ld_args <- list(
+    chr = chr,
+    start_bp = start_bp,
+    end_bp = end_bp,
+    reference_index_file = reference_index_file,
+    reference_data_file = reference_data_file,
+    reference_pop_desc_file = reference_pop_desc_file,
+    maf_cutoff = maf_cutoff,
+    missing_cutoff = missing_cutoff,
+    # A block can legitimately hold one shared SNP; dropping it would make the
+    # retained SNP set depend on where the block boundaries fall.
+    min_snps = 1L
+  )
+  if (!is.null(snp_filter)) {
+    # keep_bp skips non-filter SNPs before genotypes are read; exact allele
+    # matching (multi-allelic sites share a bp) happens below.
+    in_block <- snp_filter$bp >= start_bp & snp_filter$bp <= end_bp
+    ld_args$keep_bp <- unique(snp_filter$bp[in_block])
+    if (length(ld_args$keep_bp) == 0) ld_args$keep_bp <- -1L
+  }
+
   raw <- stats::setNames(vector("list", length(labels)), labels)
   for (label in labels) {
     raw[[label]] <- tryCatch(
-      computeSuperPopLDWindow(
-        chr = chr,
-        start_bp = start_bp,
-        end_bp = end_bp,
-        superpopulation_label = label,
-        reference_index_file = reference_index_file,
-        reference_data_file = reference_data_file,
-        reference_pop_desc_file = reference_pop_desc_file,
-        maf_cutoff = maf_cutoff,
-        missing_cutoff = missing_cutoff
-      ),
+      do.call(computeSuperPopLDWindow, c(ld_args, list(superpopulation_label = label))),
       error = function(e) e
     )
   }
@@ -936,13 +1148,18 @@ generate_prscs_ld_panels <- function(reference_index_file,
 
   key_sets <- lapply(labels, function(label) {
     r <- raw[[label]]
-    if (inherits(r, "error")) character(0) else snp_key(r$snplist)
+    if (inherits(r, "error")) return(character(0))
+    keys <- snp_key(r$snplist)
+    if (!is.null(snp_filter)) {
+      keys <- keys[.allele_free_key(r$snplist$bp, r$snplist$a1, r$snplist$a2) %in% snp_filter$key]
+    }
+    keys
   })
   common_keys <- Reduce(intersect, key_sets)
 
   result <- stats::setNames(vector("list", length(labels)), labels)
 
-  if (length(common_keys) < 2) {
+  if (length(common_keys) == 0) {
     for (label in labels) {
       blk_group <- blk_groups[[label]]
       .h5_write_attr(blk_group, "start_bp", as.integer(start_bp))

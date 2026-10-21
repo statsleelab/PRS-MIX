@@ -98,3 +98,36 @@ test_that("panel writer stores the corrected LD from the compiled reader", {
   expect_equal(unname(h5[["blk_1/ldblk"]]$read()), unname(expected),
                tolerance = 1e-10)
 })
+
+test_that("keep_bp restricts the compiled reader to the requested positions", {
+  fx <- .covariance_fixture()
+  full <- do.call(computeSuperPopLDWindow, c(
+    list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR"), fx))
+  kept <- do.call(computeSuperPopLDWindow, c(
+    list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR",
+         keep_bp = c(10L, 30L)), fx))
+
+  expect_identical(kept$snplist$rsid, c("rs1", "rs3"))
+  expect_equal(unname(kept$cormat), unname(full$cormat[c(1, 3), c(1, 3)]), tolerance = 1e-12)
+  expect_error(
+    do.call(computeSuperPopLDWindow, c(
+      list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR",
+           keep_bp = 999L), fx)),
+    "No SNPs found in requested region"
+  )
+})
+
+test_that("min_snps = 1 returns a single SNP as a 1x1 block", {
+  fx <- .covariance_fixture()
+  one <- do.call(computeSuperPopLDWindow, c(
+    list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR",
+         keep_bp = 20L, min_snps = 1L), fx))
+  expect_identical(one$snplist$rsid, "rs2")
+  expect_equal(unname(one$cormat), matrix(1, 1, 1))
+  expect_error(
+    do.call(computeSuperPopLDWindow, c(
+      list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR",
+           keep_bp = 20L), fx)),
+    "Fewer than 2 SNPs remain"
+  )
+})
