@@ -47,6 +47,32 @@ ns_load_standardized <- function(geno_dir, pop, set) {
   sweep(x, 2, sc$sd, "/")
 }
 
+# One PRS-CS output file (CHR SNP BP A1 A2 BETA, no header) as a beta vector
+# over the analysis SNPs `snps`; SNPs PRS-CS dropped count as 0.
+ns_read_beta <- function(f, snps) {
+  d <- utils::read.table(f, header = FALSE, stringsAsFactors = FALSE,
+                         col.names = c("CHR", "SNP", "BP", "A1", "A2", "BETA"))
+  pos <- match(d$SNP, snps$SNP)
+  if (anyNA(pos) || any(d$A1 != snps$A1[pos])) stop(sprintf("Unexpected SNPs or allele order in %s", f))
+  beta <- stats::setNames(numeric(nrow(snps)), snps$SNP)
+  beta[pos] <- d$BETA
+  beta
+}
+
+# Posterior global shrinkage estimate from a PRS-CS log (auto runs), else NA.
+ns_read_phi <- function(log_file) {
+  if (!file.exists(log_file)) return(NA_real_)
+  hit <- grep("global shrinkage parameter", readLines(log_file, warn = FALSE), value = TRUE)
+  if (length(hit) == 0) return(NA_real_)
+  as.numeric(sub(".*:\\s*([-+0-9.eE]+).*", "\\1", hit[length(hit)]))
+}
+
+# Arm name -> EUR weight: mix_w<w>, single_<pops[1]> = 1, single_<pops[2]> = 0.
+ns_arm_weight <- function(arm, pops) {
+  if (grepl("^mix_w", arm)) as.numeric(sub("^mix_w", "", arm))
+  else if (arm == paste0("single_", pops[1])) 1 else 0
+}
+
 ns_write_tsv <- function(x, path) {
   utils::write.table(x, path, sep = "\t", quote = FALSE, row.names = FALSE)
 }

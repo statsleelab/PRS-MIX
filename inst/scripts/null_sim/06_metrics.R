@@ -82,23 +82,6 @@ ns_write_tsv(fit, file.path(out_dir, "ld_fit.tsv"))
 # ---- PRS-CS outputs --------------------------------------------------------
 targets <- lapply(stats::setNames(pops, pops), function(p) ns_load_standardized(geno_dir, p, "target"))
 
-read_beta <- function(f) {
-  d <- utils::read.table(f, header = FALSE, stringsAsFactors = FALSE,
-                         col.names = c("CHR", "SNP", "BP", "A1", "A2", "BETA"))
-  pos <- match(d$SNP, snps$SNP)
-  if (anyNA(pos) || any(d$A1 != snps$A1[pos])) stop(sprintf("Unexpected SNPs or allele order in %s", f))
-  beta <- stats::setNames(numeric(m), snps$SNP)  # SNPs PRS-CS dropped count as 0
-  beta[pos] <- d$BETA
-  beta
-}
-
-read_phi <- function(log_file) {
-  if (!file.exists(log_file)) return(NA_real_)
-  hit <- grep("global shrinkage parameter", readLines(log_file, warn = FALSE), value = TRUE)
-  if (length(hit) == 0) return(NA_real_)
-  as.numeric(sub(".*:\\s*([-+0-9.eE]+).*", "\\1", hit[length(hit)]))
-}
-
 met <- list()
 ident <- list()
 for (phi_dir in list.dirs(file.path(sim_dir, "prscs"), recursive = FALSE)) {
@@ -109,13 +92,12 @@ for (phi_dir in list.dirs(file.path(sim_dir, "prscs"), recursive = FALSE)) {
     betas <- list()
     for (f in files) {
       arm <- sub("_pst_eff_.*$", "", basename(f))
-      beta <- read_beta(f)
+      beta <- ns_read_beta(f, snps)
       betas[[arm]] <- beta
       ab <- abs(beta)
       row <- data.frame(phi_mode = phi_mode, rep = rep, arm = arm,
-                        w = if (grepl("^mix_w", arm)) as.numeric(sub("^mix_w", "", arm))
-                            else if (arm == paste0("single_", pops[1])) 1 else 0,
-                        phi = read_phi(file.path(rep_dir, paste0(arm, ".log"))),
+                        w = ns_arm_weight(arm, pops),
+                        phi = ns_read_phi(file.path(rep_dir, paste0(arm, ".log"))),
                         abs_beta_q50 = stats::quantile(ab, 0.5, names = FALSE),
                         abs_beta_q90 = stats::quantile(ab, 0.9, names = FALSE),
                         abs_beta_q99 = stats::quantile(ab, 0.99, names = FALSE),
