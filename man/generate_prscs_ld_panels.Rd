@@ -12,15 +12,16 @@ generate_prscs_ld_panels(
   output_dir,
   chromosomes = 1:22,
   block_size = 250000,
-  blocks = NULL,
-  snp_filter = NULL,
   maf_cutoff = 0.01,
   missing_cutoff = 1,
   shrinkage = 0,
   min_eigenvalue = 1e-08,
   panel_names = NULL,
   max_blocks_per_chr = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  blocks = NULL,
+  snp_filter = NULL,
+  sample_keep = NULL
 )
 }
 \arguments{
@@ -42,18 +43,6 @@ under.}
 \item{block_size}{Block size in base pairs (see \code{\link{write_prscs_ld_chr}}).
 Ignored when `blocks` is supplied.}
 
-\item{blocks}{Optional data frame of block ranges (columns `chr`, `start_bp`,
-`end_bp`) to use instead of fixed `block_size` tiles, e.g. the cut points
-returned by \code{\link{read_prscs_block_boundaries}}. Every population
-gets the same blocks. Must cover every chromosome in `chromosomes`, with
-non-overlapping blocks.}
-
-\item{snp_filter}{Optional data frame of SNPs to keep (columns `chr`, `bp`,
-`a1`, `a2`, in any case -- a PRS-CS `snpinfo_1kg_hm3` table works as-is),
-e.g. to restrict panels to HapMap3 SNPs as PRS-CS's own panels are. SNPs
-are matched by position and allele pair in either orientation, and
-unmatched SNPs are skipped before genotypes are read.}
-
 \item{maf_cutoff}{Minimum minor allele frequency filter, applied per
 population before reconciliation. Defaults to 0.01.}
 
@@ -73,6 +62,24 @@ each requested label.}
 (useful for examples/tests).}
 
 \item{verbose}{Logical; print progress messages.}
+
+\item{blocks}{Optional data frame of block ranges (columns `chr`, `start_bp`,
+`end_bp`) to use instead of fixed `block_size` tiles, e.g. the cut points
+returned by \code{\link{read_prscs_block_boundaries}}. Every population
+gets the same blocks. Must cover every chromosome in `chromosomes`, with
+non-overlapping blocks.}
+
+\item{snp_filter}{Optional SNPs to keep: a data frame with columns `chr`,
+`bp`, `a1`, `a2` (in any case), or the path to such a whitespace-delimited
+file with a header -- e.g. PRS-CS's `snpinfo_1kg_hm3`, which works as-is,
+e.g. to restrict panels to HapMap3 SNPs as PRS-CS's own panels are. SNPs
+are matched by position and allele pair in either orientation, and
+unmatched SNPs are skipped before genotypes are read.}
+
+\item{sample_keep}{Optional named list restricting which individuals build
+the panels (population -> 1-based positions; see
+\code{\link{sample_keep_from_split}}). Every population of every
+requested superpopulation must be listed. Defaults to all individuals.}
 }
 \value{
 Invisibly, a named list of panel directory paths, one per

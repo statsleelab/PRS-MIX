@@ -74,10 +74,32 @@ computePopLDWindow <- function(chr, start_bp, end_bp, population_index, referenc
 #' @param min_snps Minimum number of SNPs that must survive filtering, else an
 #'   "insufficient SNPs" error is raised. Defaults to 2; 1 allows single-SNP
 #'   (1x1) blocks.
+#' @param sample_keep Optional named list restricting which individuals are
+#'   used: names are the superpopulation's population abbreviations (every
+#'   one must appear), values are 1-based positions of individuals within that
+#'   population's genotype string. Population weights then follow the number
+#'   of individuals kept. Used to build panels from one part of a sample split
+#'   (see \code{\link{split_reference_samples}}).
 #' @return A list with `snplist` (data frame: rsid, chr, bp, a1, a2, af1pop)
 #'   and `cormat` (signed correlation matrix).
-computeSuperPopLDWindow <- function(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff = NULL, missing_cutoff = NULL, keep_bp = NULL, min_snps = 2L) {
-    .Call(`_gauss_computeSuperPopLDWindow`, chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff, missing_cutoff, keep_bp, min_snps)
+computeSuperPopLDWindow <- function(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff = NULL, missing_cutoff = NULL, keep_bp = NULL, min_snps = 2L, sample_keep = NULL) {
+    .Call(`_gauss_computeSuperPopLDWindow`, chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff, missing_cutoff, keep_bp, min_snps, sample_keep)
+}
+
+#' Read superpopulation genotype dosages for one reference window
+#'
+#' Returns the 0/1/2 dosages (copies of `a1`) of the selected individuals for
+#' every reference SNP in the window, with no MAF or missingness filtering.
+#' Used to give simulated GWAS and scoring the exact individuals of one part of
+#' a sample split (see \code{\link{split_reference_samples}}).
+#'
+#' @inheritParams computeSuperPopLDWindow
+#' @return A list with `snplist` (data frame: rsid, chr, bp, a1, a2),
+#'   `genotypes` (integer matrix, individuals x SNPs, `NA` where the reference
+#'   has no 0/1/2 call), and `samples` (data frame: population, position --
+#'   1-based within the population -- one row per matrix row).
+readSuperPopGenotypes <- function(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, keep_bp = NULL, sample_keep = NULL) {
+    .Call(`_gauss_readSuperPopGenotypes`, chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, keep_bp, sample_keep)
 }
 
 #' Calculate population weights using RAF

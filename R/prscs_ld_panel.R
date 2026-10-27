@@ -434,6 +434,10 @@ generate_prscs_ld_panel <- function(reference_index_file,
 #'   e.g. to restrict panels to HapMap3 SNPs as PRS-CS's own panels are. SNPs
 #'   are matched by position and allele pair in either orientation, and
 #'   unmatched SNPs are skipped before genotypes are read.
+#' @param sample_keep Optional named list restricting which individuals build
+#'   the panels (population -> 1-based positions; see
+#'   \code{\link{sample_keep_from_split}}). Every population of every
+#'   requested superpopulation must be listed. Defaults to all individuals.
 #'
 #' @return Invisibly, a named list of panel directory paths, one per
 #'   (uppercased) superpopulation label.
@@ -453,7 +457,8 @@ generate_prscs_ld_panels <- function(reference_index_file,
                                      max_blocks_per_chr = NULL,
                                      verbose = TRUE,
                                      blocks = NULL,
-                                     snp_filter = NULL) {
+                                     snp_filter = NULL,
+                                     sample_keep = NULL) {
   .validate_prscs_panels_args(
     reference_index_file = reference_index_file,
     reference_data_file = reference_data_file,
@@ -471,6 +476,7 @@ generate_prscs_ld_panels <- function(reference_index_file,
   )
   if (!is.null(blocks)) blocks <- .normalize_blocks(blocks, chromosomes)
   if (!is.null(snp_filter)) snp_filter <- .normalize_snp_filter(snp_filter)
+  if (!is.null(sample_keep)) sample_keep <- .normalize_sample_keep(sample_keep)
 
   if (!requireNamespace("hdf5r", quietly = TRUE)) {
     stop("Package 'hdf5r' is required. Please install it with install.packages('hdf5r').", call. = FALSE)
@@ -513,7 +519,8 @@ generate_prscs_ld_panels <- function(reference_index_file,
       min_eigenvalue = min_eigenvalue,
       max_blocks = max_blocks_per_chr,
       idx = idx,
-      verbose = verbose
+      verbose = verbose,
+      sample_keep = sample_keep
     )
     for (label in labels) {
       snpinfo_by_pop[[label]][[k]] <- chr_result[[label]]
@@ -987,7 +994,8 @@ read_prscs_block_boundaries <- function(prscs_ref_dir, chromosomes = 1:22) {
                                         reference_pop_desc_file, block_size,
                                         maf_cutoff, missing_cutoff, shrinkage,
                                         min_eigenvalue, max_blocks, idx, verbose,
-                                        blocks = NULL, snp_filter = NULL) {
+                                        blocks = NULL, snp_filter = NULL,
+                                        sample_keep = NULL) {
   idx_chr <- idx[idx$chr == chr, , drop = FALSE]
   if (nrow(idx_chr) == 0) {
     stop(sprintf("No SNPs found for chromosome %s in index file: %s", chr, reference_index_file), call. = FALSE)
@@ -1030,6 +1038,10 @@ read_prscs_block_boundaries <- function(prscs_ref_dir, chromosomes = 1:22) {
     if (custom_blocks) {
       .h5_write_attr(h5, "blocks_md5", .md5_of(paste(blocks$start_bp, blocks$end_bp, sep = "-")))
     }
+    .h5_write_attr(h5, "sample_keep", !is.null(sample_keep))
+    if (!is.null(sample_keep)) {
+      .h5_write_attr(h5, "sample_keep_md5", .md5_of(.sample_keep_keys(sample_keep)))
+    }
     .h5_write_attr(h5, "maf_cutoff", as.numeric(maf_cutoff))
     .h5_write_attr(h5, "missing_cutoff", as.numeric(missing_cutoff))
     .h5_write_attr(h5, "shrinkage_lambda", as.numeric(shrinkage))
@@ -1071,7 +1083,8 @@ read_prscs_block_boundaries <- function(prscs_ref_dir, chromosomes = 1:22) {
       missing_cutoff = missing_cutoff,
       shrinkage = shrinkage,
       min_eigenvalue = min_eigenvalue,
-      snp_filter = chr_filter
+      snp_filter = chr_filter,
+      sample_keep = sample_keep
     )
 
     for (label in labels) {
@@ -1099,7 +1112,7 @@ read_prscs_block_boundaries <- function(prscs_ref_dir, chromosomes = 1:22) {
                                                 reference_index_file, reference_data_file,
                                                 reference_pop_desc_file, maf_cutoff,
                                                 missing_cutoff, shrinkage, min_eigenvalue,
-                                                snp_filter = NULL) {
+                                                snp_filter = NULL, sample_keep = NULL) {
   ld_args <- list(
     chr = chr,
     start_bp = start_bp,
@@ -1113,6 +1126,7 @@ read_prscs_block_boundaries <- function(prscs_ref_dir, chromosomes = 1:22) {
     # retained SNP set depend on where the block boundaries fall.
     min_snps = 1L
   )
+  if (!is.null(sample_keep)) ld_args$sample_keep <- sample_keep
   if (!is.null(snp_filter)) {
     # keep_bp skips non-filter SNPs before genotypes are read; exact allele
     # matching (multi-allelic sites share a bp) happens below.
@@ -1230,6 +1244,25 @@ read_prscs_block_boundaries <- function(prscs_ref_dir, chromosomes = 1:22) {
   diag(ld_pd) <- 1
   ld_pd <- (ld_pd + t(ld_pd)) / 2
   ld_pd
+}
+
+.normalize_sample_keep <- function(sample_keep) {
+  if (!is.list(sample_keep) || length(sample_keep) == 0 || is.null(names(sample_keep)) ||
+      any(!nzchar(names(sample_keep))) || anyDuplicated(names(sample_keep))) {
+    stop("'sample_keep' must be a non-empty list named by population abbreviation.", call. = FALSE)
+  }
+  lapply(sample_keep, function(p) {
+    if (!is.numeric(p) || anyNA(p) || any(p != round(p))) {
+      stop("'sample_keep' positions must be whole numbers.", call. = FALSE)
+    }
+    sort(as.integer(p))
+  })
+}
+
+# Canonical text form of a sample_keep list, for the panel's provenance md5.
+.sample_keep_keys <- function(sample_keep) {
+  pops <- sort(names(sample_keep))
+  unlist(lapply(pops, function(p) paste(p, sample_keep[[p]], sep = ":")), use.names = FALSE)
 }
 
 .read_pop_desc <- function(reference_pop_desc_file) {

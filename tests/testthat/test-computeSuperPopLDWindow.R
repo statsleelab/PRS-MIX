@@ -131,3 +131,67 @@ test_that("min_snps = 1 returns a single SNP as a 1x1 block", {
     "Fewer than 2 SNPs remain"
   )
 })
+
+# sample_keep / readSuperPopGenotypes -------------------------------------
+
+test_that("readSuperPopGenotypes returns the fixture's dosages in population order", {
+  genotypes <- .covariance_genotypes()
+  result <- do.call(readSuperPopGenotypes, c(
+    list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR"),
+    .covariance_fixture()
+  ))
+
+  expect_identical(result$snplist$rsid, c("rs1", "rs2", "rs3"))
+  expect_equal(unname(result$genotypes), unname(do.call(rbind, genotypes)), ignore_attr = TRUE)
+  expect_identical(result$samples$population, rep(c("P1", "P2"), c(4, 12)))
+  expect_identical(result$samples$position, c(1:4, 1:12))
+})
+
+test_that("sample_keep restricts genotypes and LD to the kept individuals", {
+  genotypes <- .covariance_genotypes()
+  keep <- list(P1 = c(1L, 3L, 4L), P2 = c(2L, 5L, 6L, 9L, 12L))
+  kept <- list(genotypes[[1]][keep$P1, , drop = FALSE], genotypes[[2]][keep$P2, , drop = FALSE])
+
+  geno <- do.call(readSuperPopGenotypes, c(
+    list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR", sample_keep = keep),
+    .covariance_fixture()
+  ))
+  expect_equal(unname(geno$genotypes), unname(do.call(rbind, kept)), ignore_attr = TRUE)
+  expect_identical(geno$samples$position, c(keep$P1, keep$P2))
+
+  ld <- do.call(computeSuperPopLDWindow, c(
+    list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR", sample_keep = keep),
+    .covariance_fixture()
+  ))
+  # Population weights follow the kept counts (3 and 5), not the full sizes.
+  expect_equal(unname(ld$cormat), unname(stats::cov2cor(.expected_superpop_covariance(kept))),
+               tolerance = 1e-12)
+  expect_equal(ld$snplist$af1pop, colMeans(do.call(rbind, kept)) / 2, ignore_attr = TRUE)
+})
+
+test_that("sample_keep with every individual matches no sample_keep", {
+  full <- do.call(computeSuperPopLDWindow, c(
+    list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR"),
+    .covariance_fixture()
+  ))
+  all_kept <- do.call(computeSuperPopLDWindow, c(
+    list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR",
+         sample_keep = list(P2 = 12:1, P1 = 1:4, OTHER = 1L)),
+    .covariance_fixture()
+  ))
+  expect_equal(all_kept$cormat, full$cormat, tolerance = 1e-12)
+  expect_equal(all_kept$snplist, full$snplist)
+})
+
+test_that("sample_keep rejects missing populations and bad positions", {
+  run <- function(keep) {
+    do.call(computeSuperPopLDWindow, c(
+      list(chr = 1, start_bp = 1, end_bp = 100, superpopulation_label = "EUR", sample_keep = keep),
+      .covariance_fixture()
+    ))
+  }
+  expect_error(run(list(P1 = 1:4)), "no entry for selected population P2")
+  expect_error(run(list(P1 = 1:5, P2 = 1:12)), "out of range for population P1")
+  expect_error(run(list(P1 = c(1L, 1L), P2 = 1:12)), "repeats a position")
+  expect_error(run(list(P1 = integer(0), P2 = 1:12)), "keeps no individuals")
+})

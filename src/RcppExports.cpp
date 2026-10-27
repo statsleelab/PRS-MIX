@@ -65,8 +65,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // computeSuperPopLDWindow
-Rcpp::List computeSuperPopLDWindow(int chr, long long int start_bp, long long int end_bp, std::string superpopulation_label, std::string reference_index_file, std::string reference_data_file, std::string reference_pop_desc_file, Rcpp::Nullable<double> maf_cutoff, Rcpp::Nullable<double> missing_cutoff, Rcpp::Nullable<Rcpp::IntegerVector> keep_bp, int min_snps);
-RcppExport SEXP _gauss_computeSuperPopLDWindow(SEXP chrSEXP, SEXP start_bpSEXP, SEXP end_bpSEXP, SEXP superpopulation_labelSEXP, SEXP reference_index_fileSEXP, SEXP reference_data_fileSEXP, SEXP reference_pop_desc_fileSEXP, SEXP maf_cutoffSEXP, SEXP missing_cutoffSEXP, SEXP keep_bpSEXP, SEXP min_snpsSEXP) {
+Rcpp::List computeSuperPopLDWindow(int chr, long long int start_bp, long long int end_bp, std::string superpopulation_label, std::string reference_index_file, std::string reference_data_file, std::string reference_pop_desc_file, Rcpp::Nullable<double> maf_cutoff, Rcpp::Nullable<double> missing_cutoff, Rcpp::Nullable<Rcpp::IntegerVector> keep_bp, int min_snps, Rcpp::Nullable<Rcpp::List> sample_keep);
+RcppExport SEXP _gauss_computeSuperPopLDWindow(SEXP chrSEXP, SEXP start_bpSEXP, SEXP end_bpSEXP, SEXP superpopulation_labelSEXP, SEXP reference_index_fileSEXP, SEXP reference_data_fileSEXP, SEXP reference_pop_desc_fileSEXP, SEXP maf_cutoffSEXP, SEXP missing_cutoffSEXP, SEXP keep_bpSEXP, SEXP min_snpsSEXP, SEXP sample_keepSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -81,7 +81,27 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<double> >::type missing_cutoff(missing_cutoffSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type keep_bp(keep_bpSEXP);
     Rcpp::traits::input_parameter< int >::type min_snps(min_snpsSEXP);
-    rcpp_result_gen = Rcpp::wrap(computeSuperPopLDWindow(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff, missing_cutoff, keep_bp, min_snps));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type sample_keep(sample_keepSEXP);
+    rcpp_result_gen = Rcpp::wrap(computeSuperPopLDWindow(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, maf_cutoff, missing_cutoff, keep_bp, min_snps, sample_keep));
+    return rcpp_result_gen;
+END_RCPP
+}
+// readSuperPopGenotypes
+Rcpp::List readSuperPopGenotypes(int chr, long long int start_bp, long long int end_bp, std::string superpopulation_label, std::string reference_index_file, std::string reference_data_file, std::string reference_pop_desc_file, Rcpp::Nullable<Rcpp::IntegerVector> keep_bp, Rcpp::Nullable<Rcpp::List> sample_keep);
+RcppExport SEXP _gauss_readSuperPopGenotypes(SEXP chrSEXP, SEXP start_bpSEXP, SEXP end_bpSEXP, SEXP superpopulation_labelSEXP, SEXP reference_index_fileSEXP, SEXP reference_data_fileSEXP, SEXP reference_pop_desc_fileSEXP, SEXP keep_bpSEXP, SEXP sample_keepSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type chr(chrSEXP);
+    Rcpp::traits::input_parameter< long long int >::type start_bp(start_bpSEXP);
+    Rcpp::traits::input_parameter< long long int >::type end_bp(end_bpSEXP);
+    Rcpp::traits::input_parameter< std::string >::type superpopulation_label(superpopulation_labelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type reference_index_file(reference_index_fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type reference_data_file(reference_data_fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type reference_pop_desc_file(reference_pop_desc_fileSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type keep_bp(keep_bpSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type sample_keep(sample_keepSEXP);
+    rcpp_result_gen = Rcpp::wrap(readSuperPopGenotypes(chr, start_bp, end_bp, superpopulation_label, reference_index_file, reference_data_file, reference_pop_desc_file, keep_bp, sample_keep));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -374,7 +394,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gauss_afmix", (DL_FUNC) &_gauss_afmix, 5},
     {"_gauss_computeLD", (DL_FUNC) &_gauss_computeLD, 9},
     {"_gauss_computePopLDWindow", (DL_FUNC) &_gauss_computePopLDWindow, 9},
-    {"_gauss_computeSuperPopLDWindow", (DL_FUNC) &_gauss_computeSuperPopLDWindow, 11},
+    {"_gauss_computeSuperPopLDWindow", (DL_FUNC) &_gauss_computeSuperPopLDWindow, 12},
+    {"_gauss_readSuperPopGenotypes", (DL_FUNC) &_gauss_readSuperPopGenotypes, 9},
     {"_gauss_cpw2", (DL_FUNC) &_gauss_cpw2, 5},
     {"_gauss_dist", (DL_FUNC) &_gauss_dist, 10},
     {"_gauss_distmix", (DL_FUNC) &_gauss_distmix, 10},

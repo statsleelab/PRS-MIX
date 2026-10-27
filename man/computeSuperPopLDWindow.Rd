@@ -12,7 +12,9 @@ computeSuperPopLDWindow(
   reference_pop_desc_file,
   maf_cutoff = NULL,
   missing_cutoff = NULL,
-  keep_bp = NULL
+  keep_bp = NULL,
+  min_snps = 2L,
+  sample_keep = NULL
 )
 }
 \arguments{
@@ -26,6 +28,8 @@ computeSuperPopLDWindow(
 \item{maf_cutoff}{Optional MAF threshold (default 0.01).}
 \item{missing_cutoff}{Optional missingness threshold in [0,1] (default 1.0).}
 \item{keep_bp}{Optional integer vector of base-pair positions; only reference SNPs at these positions are read and used. Allele matching at multi-allelic sites is left to the caller.}
+\item{min_snps}{Minimum number of SNPs that must survive filtering (default 2; 1 allows single-SNP blocks).}
+\item{sample_keep}{Optional named list restricting which individuals are used: names are the superpopulation's population abbreviations (every one must appear), values are 1-based positions of individuals within that population. Population weights then follow the number of individuals kept. See \code{\link{sample_keep_from_split}}.}
 }
 \value{A list with \code{snplist} and \code{cormat}.}
 \description{Computes a signed LD correlation matrix for one genomic region and one selected superpopulation directly from GAUSS reference files.}
