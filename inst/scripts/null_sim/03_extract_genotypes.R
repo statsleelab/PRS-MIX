@@ -27,6 +27,7 @@
 
 script_dir <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)))
 source(file.path(script_dir, "common.R"))
+suppressPackageStartupMessages(library(gauss))
 
 args <- ns_args("Rscript 03_extract_genotypes.R <data_dir> <split_tsv> <panel_root> <chr> <out_dir> [pops=EUR,ASN]", 5)
 data_dir <- args[[1]]

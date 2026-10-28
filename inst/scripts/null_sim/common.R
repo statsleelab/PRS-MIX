@@ -1,8 +1,6 @@
 # Shared helpers for the null-simulation scripts in this directory (see
 # inst/scripts/null_simulation_plan.html). Sourced, not run.
 
-suppressPackageStartupMessages(library(gauss))
-
 ns_args <- function(usage, n_required) {
   args <- commandArgs(trailingOnly = TRUE)
   if (length(args) < n_required) stop(paste("Usage:", usage), call. = FALSE)

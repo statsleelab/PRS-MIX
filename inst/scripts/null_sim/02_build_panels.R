@@ -13,6 +13,7 @@
 
 script_dir <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)))
 source(file.path(script_dir, "common.R"))
+suppressPackageStartupMessages(library(gauss))
 
 args <- ns_args(paste(
   "Rscript 02_build_panels.R <data_dir> <split_tsv> <prscs_eur_dir> <out_dir> <chr>",

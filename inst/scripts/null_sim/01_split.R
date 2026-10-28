@@ -12,6 +12,7 @@
 
 script_dir <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)))
 source(file.path(script_dir, "common.R"))
+suppressPackageStartupMessages(library(gauss))
 
 args <- ns_args("Rscript 01_split.R <pop_desc> <out_tsv> [seed=20261024] [pops=EUR,ASN]", 2)
 pop_desc <- args[[1]]
