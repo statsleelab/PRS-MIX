@@ -15,23 +15,24 @@
 #   mix_w0.0 vs single_ASN (expected exactly 0).
 #
 # Usage:
-#   Rscript 06_metrics.R <sim_dir> <chr> [pops=EUR,ASN] [deltas=0.001,0]
+#   Rscript 06_metrics.R <sim_dir> <chr> [pops=EUR,ASN] [deltas=0.001,0] [layout=eurcuts]
 #
-# Reads <sim_dir>/{geno,null,panels/eurcuts,prscs}; writes
+# Reads <sim_dir>/{geno,null,panels/<layout>,prscs}; writes
 # <sim_dir>/metrics/{ld_fit,prscs_metrics,identity}.tsv.
 
 script_dir <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)))
 source(file.path(script_dir, "common.R"))
 
-args <- ns_args("Rscript 06_metrics.R <sim_dir> <chr> [pops=EUR,ASN] [deltas=0.001,0]", 2)
+args <- ns_args("Rscript 06_metrics.R <sim_dir> <chr> [pops=EUR,ASN] [deltas=0.001,0] [layout=eurcuts]", 2)
 sim_dir <- args[[1]]
 chr <- as.integer(args[[2]])
 pops <- toupper(strsplit(ns_arg(args, 3, "EUR,ASN"), ",")[[1]])
 deltas <- as.numeric(strsplit(ns_arg(args, 4, "0.001,0"), ",")[[1]])
+layout <- ns_arg(args, 5, "eurcuts")
 stopifnot(length(pops) == 2)  # the weight sweep is w on pops[1], 1 - w on pops[2]
 
 geno_dir <- file.path(sim_dir, "geno")
-panel_root <- file.path(sim_dir, "panels", "eurcuts")
+panel_root <- file.path(sim_dir, "panels", layout)
 out_dir <- file.path(sim_dir, "metrics")
 dir.create(out_dir, showWarnings = FALSE)
 
