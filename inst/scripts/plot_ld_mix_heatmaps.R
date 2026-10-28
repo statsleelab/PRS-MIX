@@ -13,7 +13,8 @@
 #   <panel_a_h5>, <panel_b_h5>  ldblk_1kg_chr<chr>.hdf5 from each panel directory.
 #   w_a      mixing proportion of panel A (panel B gets 1 - w_a).
 #   block    block index, or "auto" for the block whose best window differs
-#            most between the two panels (mean |r_A - r_B|).
+#            most between the two panels (mean |r_A - r_B|), among blocks
+#            with at least `window` SNPs (tiny blocks otherwise win on noise).
 #   window   number of consecutive SNPs to show; the window within the block
 #            with the largest mean |r_A - r_B| is used. Use 0 for the whole block.
 #
@@ -87,9 +88,14 @@ if (identical(block_arg, "auto")) {
   cand <- lapply(seq_len(n_blk), function(i) {
     blk <- read_block(i)
     if (is.null(blk)) return(NULL)
+    if (window > 0 && length(blk$snps) < window) return(NULL)
     c(block = i, best_window(blk))
   })
   cand <- do.call(rbind, cand)
+  if (is.null(cand)) {
+    stop(sprintf("No block has at least %d SNPs; use a smaller window.", window),
+         call. = FALSE)
+  }
   block <- as.integer(cand[which.max(cand[, "score"]), "block"])
 } else {
   block <- as.integer(block_arg)
@@ -136,7 +142,7 @@ to_long <- function(r) {
 # The window's bp range is recorded in the info TSV for the caption.
 heat <- function(r, title) {
   n <- nrow(r)
-  brks <- unique(c(1, seq(20, n, by = 20), n))
+  brks <- unique(c(1, if (n >= 20) seq(20, n, by = 20), n))
   brks <- brks[c(TRUE, diff(brks) >= 8)]
   ggplot(to_long(r), aes(i, j, fill = r)) +
     geom_raster() +

@@ -1,0 +1,2 @@
+block	n_snps_block	window_start	window_end	first_snp	last_snp	first_bp	last_bp	mean_abs_diff	w_a
+30	99	17	96	rs2330333	rs2267010	23352933	23534366	0.333801660098557	0.7
