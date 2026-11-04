@@ -1,0 +1,50 @@
+== 1. Structure (chr2, EUR, ASN, AFR, AMR, SAS)
+  [PASS] EUR: 144 blocks list the same 80,416 SNPs, in order, as snpinfo
+  [PASS] ASN: 144 blocks list the same 80,416 SNPs, in order, as snpinfo
+  [PASS] ASN: same SNPs, positions and alleles as EUR
+  [PASS] AFR: 144 blocks list the same 80,416 SNPs, in order, as snpinfo
+  [PASS] AFR: same SNPs, positions and alleles as EUR
+  [PASS] AMR: 144 blocks list the same 80,416 SNPs, in order, as snpinfo
+  [PASS] AMR: same SNPs, positions and alleles as EUR
+  [PASS] SAS: 144 blocks list the same 80,416 SNPs, in order, as snpinfo
+  [PASS] SAS: same SNPs, positions and alleles as EUR
+
+== 2. LD matrices
+  [PASS] EUR: every block is a finite m x m matrix
+  [PASS] EUR: symmetric with unit diagonal (max deviation 0.0e+00)
+  [PASS] EUR: off-diagonal |r| <= 1 (max 1.0000)
+  [PASS] EUR: positive definite (smallest eigenvalue 1.00e-08)
+  [PASS] ASN: every block is a finite m x m matrix
+  [PASS] ASN: symmetric with unit diagonal (max deviation 0.0e+00)
+  [PASS] ASN: off-diagonal |r| <= 1 (max 1.0000)
+  [PASS] ASN: positive definite (smallest eigenvalue 1.00e-08)
+  [PASS] AFR: every block is a finite m x m matrix
+  [PASS] AFR: symmetric with unit diagonal (max deviation 0.0e+00)
+  [PASS] AFR: off-diagonal |r| <= 1 (max 1.0000)
+  [PASS] AFR: positive definite (smallest eigenvalue 1.00e-08)
+  [PASS] AMR: every block is a finite m x m matrix
+  [PASS] AMR: symmetric with unit diagonal (max deviation 0.0e+00)
+  [PASS] AMR: off-diagonal |r| <= 1 (max 1.0000)
+  [PASS] AMR: positive definite (smallest eigenvalue 1.00e-08)
+  [PASS] SAS: every block is a finite m x m matrix
+  [PASS] SAS: symmetric with unit diagonal (max deviation 0.0e+00)
+  [PASS] SAS: off-diagonal |r| <= 1 (max 1.0000)
+  [PASS] SAS: positive definite (smallest eigenvalue 1.00e-08)
+
+== 3. Agreement with PRS-CS's published 1000 Genomes panels
+  [INFO] EUR vs PRS-CS 1KG EUR: r correlation 0.967, RMSE 0.044 over 26,550,046 shared within-block pairs (80,415 SNPs in both)
+  [INFO] ASN vs PRS-CS 1KG EAS: r correlation 0.967, RMSE 0.051 over 20,061,079 shared within-block pairs (80,156 SNPs in both)
+  [INFO] AFR vs PRS-CS 1KG AFR: r correlation 0.979, RMSE 0.036 over 13,026,136 shared within-block pairs (79,168 SNPs in both)
+  [SKIP] AMR: no published PRS-CS panel to compare with
+  [SKIP] SAS: no published PRS-CS panel to compare with
+
+== 4. Population contrasts
+  pop         n   mean r^2, neighbours         median MAF       MAF < 0.05
+  EUR    20,281                  0.431              0.264             5.5%
+  ASN    10,800                  0.451              0.237             9.8%
+  AFR       817                  0.292              0.247             7.4%
+  AMR       533                  0.415              0.271             2.6%
+  SAS       522                  0.427              0.269             3.5%
+
+Overall structural and matrix checks: PASS
+chr2 exit 0
