@@ -14,7 +14,8 @@
 #                      and r^2 with the true genetic value, in each target
 #                      ancestry.
 #   tables.tsv         Every number in both tables, unrounded.
-#   tables.html        Browser preview of both tables, from the same numbers.
+#   tables.html        Browser preview of both tables, from the same numbers, plus
+#                      the full weight sweep and the PRS-MIX vs seed-rerun contrast.
 #   inputs/            Frozen copies of the metric tables used.
 #   manifest.json      Program, command, commits, input and output sha256.
 #
@@ -128,6 +129,38 @@ for (arm in rows) {
     add("nonnull", arm, "r2", p, by_rep(nn, arm, paste0("r2_", p)))
   }
 }
+
+# Full weight sweep (HTML preview only; computed after the tables above so
+# their bootstrap draws are unchanged). mix_w1.0 and mix_w0.0 are the
+# single-panel runs. Adds score correlation with the reference arm.
+sweep_rows <- c(sprintf("mix_w%.1f", seq(1, 0, by = -0.1)), paste0(ref, "_seed2"))
+for (arm in sweep_rows) {
+  if (grepl("_seed[0-9]+$", arm)) {
+    add("sweep_null", arm, "ld_fit_excess", "", numeric(0), "not applicable: LD fit does not depend on the sampler seed")
+  } else {
+    a <- ld0[abs(ld0$w - row_weight(arm)) < 1e-9, c("rep", "L")]
+    b <- ld0[abs(ld0$w - w0) < 1e-9, c("rep", "L")]
+    z <- merge(a, b, by = "rep")
+    add("sweep_null", arm, "ld_fit_excess", "", z[[2]] - z[[3]])
+  }
+  for (p in pops) {
+    add("sweep_null", arm, "null_score_var_pct", p,
+        by_rep(pm, arm, paste0("score_var_", p), ref, function(a, r) 100 * (a / r - 1)))
+    add("sweep_nonnull", arm, "top10_overlap_pct", p, 100 * by_rep(nn, arm, sprintf("top10_%s_%s", pa, p)))
+    add("sweep_nonnull", arm, "cor", p, by_rep(nn, arm, sprintf("cor_%s_%s", pa, p)))
+    add("sweep_nonnull", arm, "r2", p, by_rep(nn, arm, paste0("r2_", p)))
+  }
+}
+# PRS-MIX at the generating weight against the seed rerun, paired by replicate.
+mix0 <- sprintf("mix_w%.1f", w0)
+seed_arm <- paste0(ref, "_seed2")
+for (p in pops) {
+  for (m in c("top10", "cor")) {
+    col <- sprintf("%s_%s_%s", m, pa, p)
+    x <- merge(nn[nn$arm == mix0, c("rep", col)], nn[nn$arm == seed_arm, c("rep", col)], by = "rep")
+    add("seed_contrast", mix0, paste0(m, "_minus_seed"), p, (if (m == "top10") 100 else 1) * (x[[2]] - x[[3]]))
+  }
+}
 stats <- do.call(rbind, stats)
 
 # ---- LaTeX ---------------------------------------------------------------
@@ -187,10 +220,18 @@ html_cell <- function(table, arm, column, target, d) {
   if (r$mean == 0 && r$ci_lo == 0 && r$ci_hi == 0) return("0")
   sprintf("%s <span class=\"ci\">[%s, %s]</span>", html_num(r$mean, d), html_num(r$ci_lo, d), html_num(r$ci_hi, d))
 }
-html_table <- function(table, cols, head_rows) {
+# Sweep rows are labelled by the weight; the endpoints are the single-panel runs.
+sweep_label <- function(arm) {
+  if (grepl("_seed[0-9]+$", arm)) return(sprintf("%s-only PRS-CS, new sampler seed", pa))
+  w <- row_weight(arm)
+  note <- if (abs(w - 1) < 1e-9) sprintf(" (%s-only PRS-CS)", pa) else if (abs(w) < 1e-9) sprintf(" (%s-only PRS-CS)", pb) else ""
+  sprintf("%.1f%s%s", w, if (abs(w - w0) < 1e-9) "<sup>*</sup>" else "", note)
+}
+html_table <- function(table, cols, head_rows, rows = get("rows", envir = globalenv()), lab = html_label) {
   body <- vapply(rows, function(arm) {
-    cls <- if (grepl("^mix_w", arm) && abs(row_weight(arm) - w0) < 1e-9) " class=\"w0\"" else ""
-    sprintf("<tr%s><th scope=\"row\">%s</th>%s</tr>", cls, html_label(arm),
+    cls <- if (grepl("^mix_w", arm) && abs(row_weight(arm) - w0) < 1e-9) " class=\"w0\""
+           else if (grepl("_seed[0-9]+$", arm) && table != "null" && table != "nonnull") " class=\"seed\"" else ""
+    sprintf("<tr%s><th scope=\"row\">%s</th>%s</tr>", cls, lab(arm),
             paste(vapply(cols, function(cc) sprintf("<td>%s</td>", html_cell(table, arm, cc[[1]], cc[[2]], cc[[3]])), ""), collapse = ""))
   }, "")
   c("<table>", "<thead>", head_rows, "</thead>", "<tbody>", body, "</tbody>", "</table>")
@@ -201,6 +242,27 @@ null_html <- html_table("null", null_cols, c(
 nonnull_html <- html_table("nonnull", nonnull_cols, c(
   sprintf("<tr><th></th><th colspan=\"2\" class=\"group\">Top-10%% overlap with %s-only (%%)</th><th colspan=\"2\" class=\"group\"><i>r</i><sup>2</sup> with true genetic value</th></tr>", pa),
   sprintf("<tr><th>Method</th><th>%s targets</th><th>%s targets</th><th>%s targets</th><th>%s targets</th></tr>", pa, pb, pa, pb)))
+sweep_null_html <- html_table("sweep_null", null_cols, c(
+  sprintf("<tr><th></th><th>LD-fit loss</th><th colspan=\"2\" class=\"group\">Null score variance vs. %s-only (%%)</th></tr>", pa),
+  sprintf("<tr><th>%s weight <i>w</i></th><th>above <i>w</i> = %.1f</th><th>%s targets</th><th>%s targets</th></tr>", pa, w0, pa, pb)),
+  rows = sweep_rows, lab = sweep_label)
+sweep_nonnull_cols <- list(list("top10_overlap_pct", pa, 1), list("top10_overlap_pct", pb, 1),
+                           list("cor", pa, 3), list("cor", pb, 3), list("r2", pa, 3), list("r2", pb, 3))
+sweep_nonnull_html <- html_table("sweep_nonnull", sweep_nonnull_cols, c(
+  sprintf(paste0("<tr><th></th><th colspan=\"2\" class=\"group\">Top-10%% overlap with %s-only (%%)</th>",
+                 "<th colspan=\"2\" class=\"group\">Score correlation with %s-only</th>",
+                 "<th colspan=\"2\" class=\"group\"><i>r</i><sup>2</sup> with true genetic value</th></tr>"), pa, pa),
+  sprintf("<tr><th>%s weight <i>w</i></th>%s</tr>", pa,
+          paste(rep(sprintf("<th>%s targets</th><th>%s targets</th>", pa, pb), 3), collapse = ""))),
+  rows = sweep_rows, lab = sweep_label)
+contrast_cell <- function(m, p, d) html_cell("seed_contrast", mix0, paste0(m, "_minus_seed"), p, d)
+contrast_html <- c("<table>", "<thead>",
+  sprintf("<tr><th></th><th colspan=\"2\" class=\"group\">Top-10%% overlap (percentage points)</th><th colspan=\"2\" class=\"group\">Score correlation</th></tr>"),
+  sprintf("<tr><th>Comparison</th><th>%s targets</th><th>%s targets</th><th>%s targets</th><th>%s targets</th></tr>", pa, pb, pa, pb),
+  "</thead>", "<tbody>",
+  sprintf("<tr><th scope=\"row\">PRS-MIX (<i>w</i> = %.1f) minus seed rerun</th><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", w0,
+          contrast_cell("top10", pa, 1), contrast_cell("top10", pb, 1), contrast_cell("cor", pa, 4), contrast_cell("cor", pb, 4)),
+  "</tbody>", "</table>")
 n_null <- length(unique(pm$rep))
 n_nonnull <- length(unique(nn$rep))
 design <- sprintf(paste("Chromosome 22, 250 kb LD blocks. GWAS combining %s and %s discovery samples at %.0f:%.0f;",
@@ -216,6 +278,8 @@ html <- c(
   "body { margin: 0; padding: 32px 16px 56px; background: #fdfdfc; color: #141414; font: 16px/1.45 \"STIX Two Text\", \"Times New Roman\", Times, serif; }",
   "main { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }",
   "h1 { font-size: 20px; font-weight: 600; margin: 0; }",
+  "h2 { font-size: 18px; font-weight: 600; margin: 8px 0 -16px; border-top: 1px solid #c9ccd0; padding-top: 28px; }",
+  "tr.seed > * { font-style: italic; }",
   ".meta { font: 12px/1.5 ui-monospace, Menlo, monospace; color: #555a60; margin: 6px 0 0; }",
   "figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }",
   "figcaption { max-width: 82ch; font-size: 15px; }",
@@ -235,7 +299,7 @@ html <- c(
   "  thead th.group { box-shadow: inset 0 -0.7px 0 #e9eaec; } tr.w0 { background: #1f2a36; } }",
   "</style>", "</head>", "<body>", "<main>",
   "<header>", sprintf("<h1>Simulation tables: %s</h1>", basename(normalizePath(out_dir))),
-  sprintf("<p class=\"meta\">Preview of table_null.tex and table_nonnull.tex, generated from the same numbers (tables.tsv) at PRS-MIX %s.</p>", substr(git("rev-parse", "HEAD"), 1, 7)),
+  sprintf("<p class=\"meta\">The first two tables preview table_null.tex and table_nonnull.tex; the full weight sweep below is for review only. All numbers are in tables.tsv. Generated at PRS-MIX %s.</p>", substr(git("rev-parse", "HEAD"), 1, 7)),
   "</header>",
   "<figure>",
   sprintf(paste("<figcaption><b>Null GWAS</b> (%d replicates). %s LD-fit loss: excess Gaussian loss (ridge 0.001) of each method's LD matrix",
@@ -249,6 +313,24 @@ html <- c(
                 "<i>r</i><sup>2</sup>: squared correlation between scores and true genetic values.</figcaption>"),
           n_nonnull, design, pa),
   "<div class=\"wrap\">", nonnull_html, "</div>", "</figure>",
+  "<h2>Full weight sweep</h2>",
+  "<figure>",
+  sprintf(paste("<figcaption><b>Null GWAS, every mixing weight</b> (%d replicates). Same measures as above. <i>w</i> = 1.0 and 0.0",
+                "are %s-only and %s-only PRS-CS. The last row reruns %s-only PRS-CS with a new sampler seed: how much",
+                "null-score variance changes by chance alone.</figcaption>"), n_null, pa, pb, pa),
+  "<div class=\"wrap\">", sweep_null_html, "</div>", "</figure>",
+  "<figure>",
+  sprintf(paste("<figcaption><b>Non-null GWAS, every mixing weight</b> (%d replicates). Overlap and correlation compare each",
+                "weight's scores with %s-only PRS-CS (<i>w</i> = 1.0) for the same simulated GWAS and target individuals. The last",
+                "row is the same comparison for a %s-only rerun with a new sampler seed, so it is the run-to-run baseline:",
+                "differences smaller than it are within sampler noise.</figcaption>"), n_nonnull, pa, pa),
+  "<div class=\"wrap\">", sweep_nonnull_html, "</div>", "</figure>",
+  "<figure>",
+  sprintf(paste("<figcaption><b>PRS-MIX against the seed rerun at the generating weight.</b> Per-replicate difference",
+                "between PRS-MIX (<i>w</i> = %.1f) and the %s-only seed rerun, each compared with %s-only PRS-CS; negative",
+                "values mean PRS-MIX moves scores further from PRS-CS than a seed change does. Mean and bootstrap 95%%",
+                "confidence interval over %d replicates.</figcaption>"), w0, pa, pa, n_nonnull),
+  "<div class=\"wrap\">", contrast_html, "</div>", "</figure>",
   "</main>", "</body>", "</html>")
 writeLines(html, file.path(out_dir, "tables.html"))
 
