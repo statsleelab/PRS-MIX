@@ -3,51 +3,47 @@
 # section 7), written into paper/<study>/ for import by the manuscript
 # repository.
 #
-# Rows: EUR-only PRS-CS (reference), EUR-only PRS-CS rerun with another sampler
-# seed (run-to-run control), PRS-MIX at the given weights, and ASN-only PRS-CS.
-# Weights are on pops[1].
+# Methods (rows): EUR-only PRS-CS (reference), the same run with another sampler
+# seed (run-to-run control), PRS-MIX at w = 0.9, ..., 0.1 (weight on pops[1]),
+# and ASN-only PRS-CS. PRS-MIX at w = 1.0 and 0.0 is identical to the
+# single-panel runs, so those weights are not repeated.
 #
-#   table_null.tex     Null GWAS: excess LD-fit loss over the generating weight
-#                      and null score variance relative to EUR-only PRS-CS, in
-#                      each target ancestry.
-#   table_nonnull.tex  Non-null GWAS: top-decile overlap with EUR-only PRS-CS
-#                      and r^2 with the true genetic value, in each target
-#                      ancestry.
-#   tables.tsv         Every number in both tables, unrounded.
-#   tables.html        Browser preview of both tables, from the same numbers, plus
-#                      the full weight sweep and the PRS-MIX vs seed-rerun contrast.
-#   inputs/            Frozen copies of the metric tables used.
-#   manifest.json      Program, command, commits, input and output sha256.
+#   table_null.tex           Table 1. Null GWAS: excess LD-fit loss over the
+#                            generating weight; null score variance relative to
+#                            EUR-only PRS-CS, by target ancestry.
+#   table_nonnull.tex        Table 2. Non-null GWAS: top-decile overlap and score
+#                            correlation with EUR-only PRS-CS; r^2 with the true
+#                            genetic value; by target ancestry.
+#   table_seed_contrast.tex  Table 3. Replicate-paired differences, each method
+#                            minus the EUR-only seed rerun.
+#   table_settings.tex       Table 4. Simulation settings.
+#   tables.html              The same four tables for reading in a browser.
+#   tables.tsv               Every number in the tables, unrounded, with n.
+#   inputs/                  Frozen copies of the metric tables used.
+#   manifest.json            Program, command, commits, input and output sha256.
 #
-# Each cell is the mean over replicates with a percentile bootstrap 95% CI
-# (replicates resampled). Comparisons with EUR-only PRS-CS are paired within
-# replicate (same simulated GWAS and target individuals).
+# Cells are means over replicates with Monte Carlo standard errors (SD / sqrt(n)).
+# Comparisons are paired within replicate (same simulated GWAS and target
+# individuals); their SE is the SE of the paired difference.
 #
 # Usage (from the PRS-MIX root, with the inputs committed):
 #   Rscript inst/scripts/null_sim/12_paper_tables.R <metrics_dir> <out_dir> \
-#     [phi_mode=auto] [weights=0.9,0.7,0.5] [w0=0.7] [pops=EUR,ASN] [n_boot=10000]
+#     [phi_mode=auto] [w0=0.7] [pops=EUR,ASN]
 
 script_dir <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)))
 source(file.path(script_dir, "common.R"))
-usage <- paste("Rscript 12_paper_tables.R <metrics_dir> <out_dir> [phi_mode=auto]",
-               "[weights=0.9,0.7,0.5] [w0=0.7] [pops=EUR,ASN] [n_boot=10000]")
-args <- ns_args(usage, 2)
+args <- ns_args("Rscript 12_paper_tables.R <metrics_dir> <out_dir> [phi_mode=auto] [w0=0.7] [pops=EUR,ASN]", 2)
 metrics_dir <- args[[1]]
 out_dir <- args[[2]]
 phi_mode <- ns_arg(args, 3, "auto")
-weights <- as.numeric(strsplit(ns_arg(args, 4, "0.9,0.7,0.5"), ",")[[1]])
-w0 <- as.numeric(ns_arg(args, 5, "0.7"))
-pops <- toupper(strsplit(ns_arg(args, 6, "EUR,ASN"), ",")[[1]])
-n_boot <- as.integer(ns_arg(args, 7, "10000"))
-boot_seed <- 20261105L
+w0 <- as.numeric(ns_arg(args, 4, "0.7"))
+pops <- toupper(strsplit(ns_arg(args, 5, "EUR,ASN"), ",")[[1]])
 stopifnot(length(pops) == 2)
 pa <- pops[1]
 pb <- pops[2]
+program <- "inst/scripts/null_sim/12_paper_tables.R"
 
-sha <- function(path) {
-  out <- system2("shasum", c("-a", "256", shQuote(path)), stdout = TRUE)
-  sub("\\s.*$", "", out)
-}
+sha <- function(path) sub("\\s.*$", "", system2("shasum", c("-a", "256", shQuote(path)), stdout = TRUE))
 git <- function(...) system2("git", c(...), stdout = TRUE)
 
 # ---- Freeze inputs -------------------------------------------------------
@@ -58,316 +54,331 @@ inputs <- lapply(input_names, function(f) {
   dst <- file.path(out_dir, "inputs", f)
   file.copy(src, dst, overwrite = TRUE)
   stopifnot(sha(src) == sha(dst))
-  dirty <- length(git("status", "--porcelain", "--", src)) > 0
   list(path = dst, source = src, sha256 = sha(dst),
        source_commit = git("log", "-1", "--format=%H", "--", src),
-       source_uncommitted = dirty)
+       source_uncommitted = length(git("status", "--porcelain", "--", src)) > 0)
 })
 names(inputs) <- input_names
 if (any(vapply(inputs, `[[`, TRUE, "source_uncommitted"))) {
   stop("Input metric tables have uncommitted changes; commit them first.", call. = FALSE)
 }
-
 pm <- ns_read_tsv(inputs[["prscs_metrics.tsv"]]$path)
 nn <- ns_read_tsv(inputs[["nonnull_metrics.tsv"]]$path)
 ld <- ns_read_tsv(inputs[["ld_fit.tsv"]]$path)
 pm <- pm[pm$phi_mode == phi_mode, ]
 nn <- nn[nn$phi_mode == phi_mode, ]
+ld <- ld[abs(ld$delta - 0.001) < 1e-12, ]
 
 # ---- Statistics ----------------------------------------------------------
-set.seed(boot_seed)
-summ <- function(x) {
-  x <- x[is.finite(x)]
-  b <- vapply(seq_len(n_boot), function(i) mean(sample(x, replace = TRUE)), numeric(1))
-  c(mean = mean(x), ci_lo = unname(stats::quantile(b, 0.025)),
-    ci_hi = unname(stats::quantile(b, 0.975)), n = length(x))
-}
-# Per-replicate value of `col` for `arm`, optionally paired with `ref_arm`.
-by_rep <- function(tab, arm, col, ref_arm = NULL, f = function(a, r) a) {
-  a <- tab[tab$arm == arm, c("rep", col)]
-  if (is.null(ref_arm)) return(a[[2]])
-  r <- tab[tab$arm == ref_arm, c("rep", col)]
-  z <- merge(a, r, by = "rep")
-  f(z[[2]], z[[3]])
-}
 ref <- paste0("single_", pa)
-rows <- c(ref, paste0(ref, "_seed2"), sprintf("mix_w%.1f", weights), paste0("single_", pb))
-row_weight <- function(arm) ns_arm_weight(arm, pops)
-
-stats <- list()
-add <- function(table, arm, column, target, x, note = "") {
-  s <- if (length(x)) summ(x) else c(mean = NA, ci_lo = NA, ci_hi = NA, n = 0)
-  stats[[length(stats) + 1]] <<- data.frame(table = table, arm = arm, column = column, target = target,
-                                            mean = s[["mean"]], ci_lo = s[["ci_lo"]], ci_hi = s[["ci_hi"]],
-                                            n_rep = s[["n"]], note = note)
-}
-ld0 <- ld[abs(ld$delta - 0.001) < 1e-12, ]
-for (arm in rows) {
-  seed_row <- grepl("_seed[0-9]+$", arm)
-  # Null: excess LD-fit loss L(w) - L(w0), per replicate (does not depend on the sampler).
-  if (seed_row) {
-    add("null", arm, "ld_fit_excess", "", numeric(0), "not applicable: LD fit does not depend on the sampler seed")
-  } else {
-    w <- row_weight(arm)
-    a <- ld0[abs(ld0$w - w) < 1e-9, c("rep", "L")]
-    b <- ld0[abs(ld0$w - w0) < 1e-9, c("rep", "L")]
-    z <- merge(a, b, by = "rep")
-    add("null", arm, "ld_fit_excess", "", z[[2]] - z[[3]])
-  }
-  for (p in pops) {
-    col <- paste0("score_var_", p)
-    if (arm == ref) {
-      add("null", arm, "null_score_var_pct", p, numeric(0), "reference")
-    } else {
-      add("null", arm, "null_score_var_pct", p, by_rep(pm, arm, col, ref, function(a, r) 100 * (a / r - 1)))
-    }
-    if (arm == ref) {
-      add("nonnull", arm, "top10_overlap_pct", p, numeric(0), "reference")
-    } else {
-      add("nonnull", arm, "top10_overlap_pct", p, 100 * by_rep(nn, arm, sprintf("top10_%s_%s", pa, p)))
-    }
-    add("nonnull", arm, "r2", p, by_rep(nn, arm, paste0("r2_", p)))
-  }
-}
-
-# Full weight sweep (HTML preview only; computed after the tables above so
-# their bootstrap draws are unchanged). mix_w1.0 and mix_w0.0 are the
-# single-panel runs. Adds score correlation with the reference arm.
-sweep_rows <- c(sprintf("mix_w%.1f", seq(1, 0, by = -0.1)), paste0(ref, "_seed2"))
-for (arm in sweep_rows) {
-  if (grepl("_seed[0-9]+$", arm)) {
-    add("sweep_null", arm, "ld_fit_excess", "", numeric(0), "not applicable: LD fit does not depend on the sampler seed")
-  } else {
-    a <- ld0[abs(ld0$w - row_weight(arm)) < 1e-9, c("rep", "L")]
-    b <- ld0[abs(ld0$w - w0) < 1e-9, c("rep", "L")]
-    z <- merge(a, b, by = "rep")
-    add("sweep_null", arm, "ld_fit_excess", "", z[[2]] - z[[3]])
-  }
-  for (p in pops) {
-    add("sweep_null", arm, "null_score_var_pct", p,
-        by_rep(pm, arm, paste0("score_var_", p), ref, function(a, r) 100 * (a / r - 1)))
-    add("sweep_nonnull", arm, "top10_overlap_pct", p, 100 * by_rep(nn, arm, sprintf("top10_%s_%s", pa, p)))
-    add("sweep_nonnull", arm, "cor", p, by_rep(nn, arm, sprintf("cor_%s_%s", pa, p)))
-    add("sweep_nonnull", arm, "r2", p, by_rep(nn, arm, paste0("r2_", p)))
-  }
-}
-# PRS-MIX at the generating weight against the seed rerun, paired by replicate.
-mix0 <- sprintf("mix_w%.1f", w0)
 seed_arm <- paste0(ref, "_seed2")
-for (p in pops) {
-  for (m in c("top10", "cor")) {
-    col <- sprintf("%s_%s_%s", m, pa, p)
-    x <- merge(nn[nn$arm == mix0, c("rep", col)], nn[nn$arm == seed_arm, c("rep", col)], by = "rep")
-    add("seed_contrast", mix0, paste0(m, "_minus_seed"), p, (if (m == "top10") 100 else 1) * (x[[2]] - x[[3]]))
+mix_arms <- sprintf("mix_w%.1f", seq(0.9, 0.1, by = -0.1))
+methods <- c(ref, seed_arm, mix_arms, paste0("single_", pb))
+weight_of <- function(arm) ns_arm_weight(arm, pops)
+setting <- sprintf("%s + %s, %.0f:%.0f", pa, pb, 100 * w0, 100 * (1 - w0))
+
+# Per-replicate values of `col` for `arm`, named by replicate.
+per_rep <- function(tab, arm, col) {
+  x <- tab[tab$arm == arm, ]
+  stats::setNames(x[[col]], x$rep)
+}
+paired <- function(a, b) {
+  r <- intersect(names(a), names(b))
+  a[r] - b[r]
+}
+ld_excess <- function(arm) {
+  a <- ld[abs(ld$w - weight_of(arm)) < 1e-9, ]
+  b <- ld[abs(ld$w - w0) < 1e-9, ]
+  paired(stats::setNames(a$L, a$rep), stats::setNames(b$L, b$rep))
+}
+var_pct <- function(arm, p) {  # null score variance relative to the reference, %
+  v <- per_rep(pm, arm, paste0("score_var_", p))
+  r <- per_rep(pm, ref, paste0("score_var_", p))
+  k <- intersect(names(v), names(r))
+  stats::setNames(100 * (v[k] / r[k] - 1), k)
+}
+
+cells <- list()
+put <- function(table, arm, column, x, note = "") {
+  x <- x[is.finite(x)]
+  n <- length(x)
+  cells[[length(cells) + 1]] <<- data.frame(
+    table = table, setting = setting, arm = arm, column = column, n = n,
+    mean = if (n) mean(x) else NA_real_, se = if (n > 1) stats::sd(x) / sqrt(n) else NA_real_, note = note)
+}
+for (arm in methods) {
+  is_ref <- arm == ref
+  is_seed <- arm == seed_arm
+  # Table 1: null GWAS.
+  put("null", arm, "replicates", numeric(0), as.character(sum(pm$arm == arm)))
+  if (is_seed) put("null", arm, "ld_fit_excess", numeric(0), "n/a") else put("null", arm, "ld_fit_excess", ld_excess(arm))
+  for (p in pops) {
+    if (is_ref) put("null", arm, paste0("null_var_pct_", p), numeric(0), "ref.")
+    else put("null", arm, paste0("null_var_pct_", p), var_pct(arm, p))
+  }
+  # Table 2: non-null GWAS.
+  put("nonnull", arm, "replicates", numeric(0), as.character(sum(nn$arm == arm)))
+  for (p in pops) {
+    if (is_ref) {
+      put("nonnull", arm, paste0("top10_pct_", p), numeric(0), "ref.")
+      put("nonnull", arm, paste0("cor_", p), numeric(0), "ref.")
+    } else {
+      put("nonnull", arm, paste0("top10_pct_", p), 100 * per_rep(nn, arm, sprintf("top10_%s_%s", pa, p)))
+      put("nonnull", arm, paste0("cor_", p), per_rep(nn, arm, sprintf("cor_%s_%s", pa, p)))
+    }
+  }
+  for (p in pops) put("nonnull", arm, paste0("r2_", p), per_rep(nn, arm, paste0("r2_", p)))
+  # Table 3: method minus the seed rerun, paired by replicate.
+  if (!is_ref && !is_seed) {
+    d_var <- lapply(stats::setNames(pops, pops), function(p) paired(var_pct(arm, p), var_pct(seed_arm, p)))
+    d_top <- lapply(stats::setNames(pops, pops), function(p) {
+      col <- sprintf("top10_%s_%s", pa, p)
+      100 * paired(per_rep(nn, arm, col), per_rep(nn, seed_arm, col))
+    })
+    d_cor <- lapply(stats::setNames(pops, pops), function(p) {
+      col <- sprintf("cor_%s_%s", pa, p)
+      1000 * paired(per_rep(nn, arm, col), per_rep(nn, seed_arm, col))
+    })
+    put("seed_contrast", arm, "pairs", numeric(0),
+        sprintf("%d / %d", length(d_var[[1]]), length(d_top[[1]])))
+    for (p in pops) put("seed_contrast", arm, paste0("d_null_var_", p), d_var[[p]])
+    for (p in pops) put("seed_contrast", arm, paste0("d_top10_", p), d_top[[p]])
+    for (p in pops) put("seed_contrast", arm, paste0("d_cor_x1000_", p), d_cor[[p]])
   }
 }
-stats <- do.call(rbind, stats)
+cells <- do.call(rbind, cells)
+ns_write_tsv(cells, file.path(out_dir, "tables.tsv"))
+
+# ---- Table definitions (shared by LaTeX and HTML) ------------------------
+# Each column: id, digits, signed (show + for positive), header group, header.
+col <- function(id, digits, group = "", head, signed = FALSE) list(id = id, digits = digits, group = group, head = head, signed = signed)
+tables <- list(
+  null = list(
+    rows = methods, label_head = "Method",
+    cols = list(col("replicates", 0, "", "Replicates"),
+                col("ld_fit_excess", 3, "", sprintf("LD-fit loss above $w = %.1f$", w0)),
+                col(paste0("null_var_pct_", pa), 1, "nullvar", sprintf("%s targets", pa), signed = TRUE),
+                col(paste0("null_var_pct_", pb), 1, "nullvar", sprintf("%s targets", pb), signed = TRUE)),
+    groups = list(nullvar = sprintf("Null score variance vs.\\ %s-only (\\%%)", pa))),
+  nonnull = list(
+    rows = methods, label_head = "Method",
+    cols = list(col("replicates", 0, "", "Replicates"),
+                col(paste0("top10_pct_", pa), 1, "top", sprintf("%s", pa)),
+                col(paste0("top10_pct_", pb), 1, "top", sprintf("%s", pb)),
+                col(paste0("cor_", pa), 3, "cor", sprintf("%s", pa)),
+                col(paste0("cor_", pb), 3, "cor", sprintf("%s", pb)),
+                col(paste0("r2_", pa), 3, "r2", sprintf("%s", pa)),
+                col(paste0("r2_", pb), 3, "r2", sprintf("%s", pb))),
+    groups = list(top = sprintf("Top-10\\%% overlap with %s-only (\\%%)", pa),
+                  cor = sprintf("Correlation with %s-only", pa),
+                  r2 = "$r^2$ with true genetic value")),
+  seed_contrast = list(
+    rows = c(mix_arms, paste0("single_", pb)), label_head = "Comparison",
+    cols = list(col("pairs", 0, "", "Pairs (null / non-null)"),
+                col(paste0("d_null_var_", pa), 1, "dvar", pa, signed = TRUE),
+                col(paste0("d_null_var_", pb), 1, "dvar", pb, signed = TRUE),
+                col(paste0("d_top10_", pa), 2, "dtop", pa, signed = TRUE),
+                col(paste0("d_top10_", pb), 2, "dtop", pb, signed = TRUE),
+                col(paste0("d_cor_x1000_", pa), 2, "dcor", pa, signed = TRUE),
+                col(paste0("d_cor_x1000_", pb), 2, "dcor", pb, signed = TRUE)),
+    groups = list(dvar = "Null score variance (pp)", dtop = "Top-10\\% overlap (pp)",
+                  dcor = "Correlation $\\times 10^3$"))
+)
+method_label <- function(arm, tex) {
+  star <- function(w) if (abs(w - w0) < 1e-9) (if (tex) "$^{*}$" else "<sup>*</sup>") else ""
+  wl <- function(w) if (tex) sprintf("PRS-MIX, $w = %.1f$%s", w, star(w)) else sprintf("PRS-MIX, <i>w</i> = %.1f%s", w, star(w))
+  if (arm == ref) return(sprintf("PRS-CS, %s panel", pa))
+  if (arm == seed_arm) return(sprintf("PRS-CS, %s panel, new seed", pa))
+  if (grepl("^single_", arm)) return(sprintf("PRS-CS, %s panel", sub("^single_", "", arm)))
+  wl(weight_of(arm))
+}
+contrast_label <- function(arm, tex) {
+  minus <- if (tex) " $-$ " else " &minus; "
+  paste0(method_label(arm, tex), minus, sprintf("%s rerun", pa))
+}
+fmt_num <- function(x, d, signed, tex) {
+  s <- formatC(abs(x), format = "f", digits = d)
+  sign <- if (x < 0) (if (tex) "$-$" else "&minus;") else if (signed && x > 0) "+" else ""
+  paste0(sign, s)
+}
+cell_text <- function(table, arm, c, tex) {
+  r <- cells[cells$table == table & cells$arm == arm & cells$column == c$id, ]
+  if (nrow(r) == 0) return(if (tex) "--" else "&ndash;")
+  if (r$note == "n/a") return(if (tex) "--" else "&ndash;")
+  if (nzchar(r$note)) return(r$note)
+  if (is.na(r$se)) return(fmt_num(r$mean, c$digits, c$signed, tex))
+  if (r$mean == 0 && r$se == 0) return("0")  # zero by definition (generating weight)
+  unit <- 10^-c$digits
+  se <- if (r$se < unit / 2) paste0(if (tex) "$<$" else "&lt;", formatC(unit, format = "f", digits = c$digits))
+        else formatC(r$se, format = "f", digits = c$digits)
+  sprintf("%s (%s)", fmt_num(r$mean, c$digits, c$signed, tex), se)
+}
+row_label <- function(name, arm, tex) if (name == "seed_contrast") contrast_label(arm, tex) else method_label(arm, tex)
 
 # ---- LaTeX ---------------------------------------------------------------
-label <- function(arm) {
-  if (arm == ref) return(sprintf("PRS-CS, %s panel", pa))
-  if (grepl("_seed[0-9]+$", arm)) return(sprintf("\\quad rerun, new sampler seed"))
-  if (grepl("^single_", arm)) return(sprintf("PRS-CS, %s panel", sub("^single_", "", arm)))
-  w <- row_weight(arm)
-  sprintf("PRS-MIX, $w_{\\mathrm{%s}} = %.1f$%s", pa, w, if (abs(w - w0) < 1e-9) "$^{*}$" else "")
-}
-num <- function(x, d) {
-  s <- formatC(x, format = "f", digits = d)
-  ifelse(x < 0, paste0("$-$", sub("^-", "", s)), s)
-}
-cell <- function(table, arm, column, target, d) {
-  r <- stats[stats$table == table & stats$arm == arm & stats$column == column & stats$target == target, ]
-  if (r$note == "reference") return("ref.")
-  if (is.na(r$mean)) return("--")
-  if (r$mean == 0 && r$ci_lo == 0 && r$ci_hi == 0) return("0")  # zero by definition (generating weight)
-  sprintf("%s {\\scriptsize[%s, %s]}", num(r$mean, d), num(r$ci_lo, d), num(r$ci_hi, d))
-}
-tabular <- function(table, cols, header) {
-  body <- vapply(rows, function(arm) {
-    paste0(label(arm), " & ", paste(vapply(cols, function(cc) cell(table, arm, cc[[1]], cc[[2]], cc[[3]]), ""), collapse = " & "), " \\\\")
+latex_table <- function(name) {
+  t <- tables[[name]]
+  nc <- length(t$cols)
+  grp <- vapply(t$cols, `[[`, "", "group")
+  # Group header row with \cmidrule under each group (columns offset by Setting and Method).
+  runs <- rle(grp)
+  ends <- cumsum(runs$lengths) + 2
+  starts <- ends - runs$lengths + 1
+  top <- c("", "", unlist(Map(function(g, l) if (nzchar(g)) sprintf("\\multicolumn{%d}{c}{%s}", l, t$groups[[g]]) else rep("", l),
+                                runs$values, runs$lengths)))
+  rules <- paste(sprintf("\\cmidrule(lr){%d-%d}", starts[nzchar(runs$values)], ends[nzchar(runs$values)]), collapse = "")
+  heads <- c("Setting", t$label_head, vapply(t$cols, `[[`, "", "head"))
+  body <- vapply(seq_along(t$rows), function(i) {
+    arm <- t$rows[i]
+    paste0(if (i == 1) setting else "", " & ", row_label(name, arm, TRUE), " & ",
+           paste(vapply(t$cols, function(c) cell_text(name, arm, c, TRUE), ""), collapse = " & "), " \\\\")
   }, "")
-  c(sprintf("%% Generated by inst/scripts/null_sim/12_paper_tables.R; do not edit."),
-    sprintf("\\begin{tabular}{l%s}", strrep("r", length(cols))),
-    "\\toprule", header, "\\midrule", body, "\\bottomrule", "\\end{tabular}")
+  c("% Generated by inst/scripts/null_sim/12_paper_tables.R; do not edit.",
+    sprintf("\\begin{tabular}{ll%s}", strrep("r", nc)), "\\toprule",
+    if (any(nzchar(grp))) c(paste(paste(top, collapse = " & "), "\\\\"), rules),
+    paste(paste(heads, collapse = " & "), "\\\\"), "\\midrule", body, "\\bottomrule", "\\end{tabular}")
 }
-null_cols <- list(list("ld_fit_excess", "", 3), list("null_score_var_pct", pa, 1), list("null_score_var_pct", pb, 1))
-null_tex <- tabular("null", null_cols, c(
-  sprintf(" & LD-fit loss & \\multicolumn{2}{c}{Null score variance vs.\\ %s-only (\\%%)} \\\\", pa),
-  "\\cmidrule(lr){3-4}",
-  sprintf("Method & above $w = %.1f$ & %s targets & %s targets \\\\", w0, pa, pb)))
-nonnull_cols <- list(list("top10_overlap_pct", pa, 1), list("top10_overlap_pct", pb, 1), list("r2", pa, 3), list("r2", pb, 3))
-nonnull_tex <- tabular("nonnull", nonnull_cols, c(
-  sprintf(" & \\multicolumn{2}{c}{Top-10\\%% overlap with %s-only (\\%%)} & \\multicolumn{2}{c}{$r^2$ with true genetic value} \\\\", pa),
-  "\\cmidrule(lr){2-3}\\cmidrule(lr){4-5}",
-  sprintf("Method & %s targets & %s targets & %s targets & %s targets \\\\", pa, pb, pa, pb)))
-writeLines(null_tex, file.path(out_dir, "table_null.tex"))
-writeLines(nonnull_tex, file.path(out_dir, "table_nonnull.tex"))
-ns_write_tsv(stats, file.path(out_dir, "tables.tsv"))
+settings_rows <- list(
+  c("Setting", setting),
+  c("Chromosome", "22"),
+  c("LD blocks", "fixed 250 kb, shared by both panels"),
+  c("GWAS composition", sprintf("%s %.0f\\%%, %s %.0f\\%% (Stouffer meta-analysis)", pa, 100 * w0, pb, 100 * (1 - w0))),
+  c("Replicates", sprintf("%d null, %d non-null", length(unique(pm$rep)), length(unique(nn$rep)))),
+  c("Mixing weights", sprintf("$w$ on %s: 0.0 to 1.0 in steps of 0.1", pa)),
+  c("PRS-CS", sprintf("$\\phi$ %s, sampler defaults (1,000 iterations, 500 burn-in, thinning 5)", phi_mode)),
+  c("Sampler seeds", "1000 + replicate; seed rerun 2000 + replicate"))
+latex_settings <- c("% Generated by inst/scripts/null_sim/12_paper_tables.R; do not edit.",
+                    "\\begin{tabular}{ll}", "\\toprule", "Item & Value \\\\", "\\midrule",
+                    vapply(settings_rows[-1], function(r) sprintf("%s & %s \\\\", r[1], r[2]), ""),
+                    "\\bottomrule", "\\end{tabular}")
+writeLines(latex_table("null"), file.path(out_dir, "table_null.tex"))
+writeLines(latex_table("nonnull"), file.path(out_dir, "table_nonnull.tex"))
+writeLines(latex_table("seed_contrast"), file.path(out_dir, "table_seed_contrast.tex"))
+writeLines(latex_settings, file.path(out_dir, "table_settings.tex"))
 
-# ---- HTML preview (same numbers and layout as the LaTeX tables) -----------
-html_label <- function(arm) {
-  if (arm == ref) return(sprintf("PRS-CS, %s panel", pa))
-  if (grepl("_seed[0-9]+$", arm)) return("<span class=\"indent\"></span>rerun, new sampler seed")
-  if (grepl("^single_", arm)) return(sprintf("PRS-CS, %s panel", sub("^single_", "", arm)))
-  w <- row_weight(arm)
-  sprintf("PRS-MIX, <i>w</i><sub>%s</sub> = %.1f%s", pa, w, if (abs(w - w0) < 1e-9) "<sup>*</sup>" else "")
+# ---- HTML ----------------------------------------------------------------
+tex2html <- function(s) {
+  s <- gsub("\\\\%", "%", s)
+  s <- gsub("vs\\.\\\\ ", "vs. ", s)
+  s <- gsub("\\$r\\^2\\$", "<i>r</i><sup>2</sup>", s)
+  s <- gsub("\\$\\\\times 10\\^3\\$", "&times;10<sup>3</sup>", s)
+  s <- gsub("\\$\\\\phi\\$", "<i>&phi;</i>", s)
+  s <- gsub("\\$w = ([0-9.]+)\\$", "<i>w</i> = \\1", s)
+  s <- gsub("\\$w\\$", "<i>w</i>", s)
+  s
 }
-html_num <- function(x, d) sub("^-", "&minus;", formatC(x, format = "f", digits = d))
-html_cell <- function(table, arm, column, target, d) {
-  r <- stats[stats$table == table & stats$arm == arm & stats$column == column & stats$target == target, ]
-  if (r$note == "reference") return("ref.")
-  if (is.na(r$mean)) return("&ndash;")
-  if (r$mean == 0 && r$ci_lo == 0 && r$ci_hi == 0) return("0")
-  sprintf("%s <span class=\"ci\">[%s, %s]</span>", html_num(r$mean, d), html_num(r$ci_lo, d), html_num(r$ci_hi, d))
-}
-# Sweep rows are labelled by the weight; the endpoints are the single-panel runs.
-sweep_label <- function(arm) {
-  if (grepl("_seed[0-9]+$", arm)) return(sprintf("%s-only PRS-CS, new sampler seed", pa))
-  w <- row_weight(arm)
-  note <- if (abs(w - 1) < 1e-9) sprintf(" (%s-only PRS-CS)", pa) else if (abs(w) < 1e-9) sprintf(" (%s-only PRS-CS)", pb) else ""
-  sprintf("%.1f%s%s", w, if (abs(w - w0) < 1e-9) "<sup>*</sup>" else "", note)
-}
-html_table <- function(table, cols, head_rows, rows = get("rows", envir = globalenv()), lab = html_label) {
-  body <- vapply(rows, function(arm) {
-    cls <- if (grepl("^mix_w", arm) && abs(row_weight(arm) - w0) < 1e-9) " class=\"w0\""
-           else if (grepl("_seed[0-9]+$", arm) && table != "null" && table != "nonnull") " class=\"seed\"" else ""
-    sprintf("<tr%s><th scope=\"row\">%s</th>%s</tr>", cls, lab(arm),
-            paste(vapply(cols, function(cc) sprintf("<td>%s</td>", html_cell(table, arm, cc[[1]], cc[[2]], cc[[3]])), ""), collapse = ""))
+html_table <- function(name) {
+  t <- tables[[name]]
+  grp <- vapply(t$cols, `[[`, "", "group")
+  runs <- rle(grp)
+  top <- paste0("<th></th><th></th>", paste(unlist(Map(function(g, l) {
+    if (nzchar(g)) sprintf("<th colspan=\"%d\" class=\"grp\">%s</th>", l, tex2html(t$groups[[g]])) else rep("<th></th>", l)
+  }, runs$values, runs$lengths)), collapse = ""))
+  heads <- paste0(sprintf("<th>Setting</th><th>%s</th>", t$label_head),
+                  paste(sprintf("<th>%s</th>", vapply(t$cols, function(c) tex2html(c$head), "")), collapse = ""))
+  body <- vapply(seq_along(t$rows), function(i) {
+    arm <- t$rows[i]
+    sprintf("<tr><td>%s</td><td>%s</td>%s</tr>", if (i == 1) setting else "", row_label(name, arm, FALSE),
+            paste(sprintf("<td>%s</td>", vapply(t$cols, function(c) cell_text(name, arm, c, FALSE), "")), collapse = ""))
   }, "")
-  c("<table>", "<thead>", head_rows, "</thead>", "<tbody>", body, "</tbody>", "</table>")
+  c("<table>", "<thead>", if (any(nzchar(grp))) sprintf("<tr class=\"top\">%s</tr>", top),
+    sprintf("<tr class=\"%s\">%s</tr>", if (any(nzchar(grp))) "sub" else "top", heads), "</thead>",
+    "<tbody>", body, "</tbody>", "</table>")
 }
-null_html <- html_table("null", null_cols, c(
-  sprintf("<tr><th></th><th>LD-fit loss</th><th colspan=\"2\" class=\"group\">Null score variance vs. %s-only (%%)</th></tr>", pa),
-  sprintf("<tr><th>Method</th><th>above <i>w</i> = %.1f</th><th>%s targets</th><th>%s targets</th></tr>", w0, pa, pb)))
-nonnull_html <- html_table("nonnull", nonnull_cols, c(
-  sprintf("<tr><th></th><th colspan=\"2\" class=\"group\">Top-10%% overlap with %s-only (%%)</th><th colspan=\"2\" class=\"group\"><i>r</i><sup>2</sup> with true genetic value</th></tr>", pa),
-  sprintf("<tr><th>Method</th><th>%s targets</th><th>%s targets</th><th>%s targets</th><th>%s targets</th></tr>", pa, pb, pa, pb)))
-sweep_null_html <- html_table("sweep_null", null_cols, c(
-  sprintf("<tr><th></th><th>LD-fit loss</th><th colspan=\"2\" class=\"group\">Null score variance vs. %s-only (%%)</th></tr>", pa),
-  sprintf("<tr><th>%s weight <i>w</i></th><th>above <i>w</i> = %.1f</th><th>%s targets</th><th>%s targets</th></tr>", pa, w0, pa, pb)),
-  rows = sweep_rows, lab = sweep_label)
-sweep_nonnull_cols <- list(list("top10_overlap_pct", pa, 1), list("top10_overlap_pct", pb, 1),
-                           list("cor", pa, 3), list("cor", pb, 3), list("r2", pa, 3), list("r2", pb, 3))
-sweep_nonnull_html <- html_table("sweep_nonnull", sweep_nonnull_cols, c(
-  sprintf(paste0("<tr><th></th><th colspan=\"2\" class=\"group\">Top-10%% overlap with %s-only (%%)</th>",
-                 "<th colspan=\"2\" class=\"group\">Score correlation with %s-only</th>",
-                 "<th colspan=\"2\" class=\"group\"><i>r</i><sup>2</sup> with true genetic value</th></tr>"), pa, pa),
-  sprintf("<tr><th>%s weight <i>w</i></th>%s</tr>", pa,
-          paste(rep(sprintf("<th>%s targets</th><th>%s targets</th>", pa, pb), 3), collapse = ""))),
-  rows = sweep_rows, lab = sweep_label)
-contrast_cell <- function(m, p, d) html_cell("seed_contrast", mix0, paste0(m, "_minus_seed"), p, d)
-contrast_html <- c("<table>", "<thead>",
-  sprintf("<tr><th></th><th colspan=\"2\" class=\"group\">Top-10%% overlap (percentage points)</th><th colspan=\"2\" class=\"group\">Score correlation</th></tr>"),
-  sprintf("<tr><th>Comparison</th><th>%s targets</th><th>%s targets</th><th>%s targets</th><th>%s targets</th></tr>", pa, pb, pa, pb),
-  "</thead>", "<tbody>",
-  sprintf("<tr><th scope=\"row\">PRS-MIX (<i>w</i> = %.1f) minus seed rerun</th><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", w0,
-          contrast_cell("top10", pa, 1), contrast_cell("top10", pb, 1), contrast_cell("cor", pa, 4), contrast_cell("cor", pb, 4)),
-  "</tbody>", "</table>")
+html_settings <- c("<table>", "<thead>", "<tr class=\"top\"><th>Setting</th>",
+                   paste(sprintf("<th>%s</th>", vapply(settings_rows[-1], `[[`, "", 1)), collapse = ""), "</tr>", "</thead>",
+                   "<tbody>", "<tr>", paste(sprintf("<td>%s</td>", tex2html(vapply(settings_rows, `[[`, "", 2))), collapse = ""),
+                   "</tr>", "</tbody>", "</table>")
 n_null <- length(unique(pm$rep))
 n_nonnull <- length(unique(nn$rep))
-design <- sprintf(paste("Chromosome 22, 250 kb LD blocks. GWAS combining %s and %s discovery samples at %.0f:%.0f;",
-                        "PRS-CS with phi = %s. Mean over replicates with percentile bootstrap 95%% confidence intervals",
-                        "(%s resamples of replicates). <sup>*</sup>Generating weight."),
-                  pa, pb, 100 * w0, 100 * (1 - w0), phi_mode, format(n_boot, big.mark = ","))
+common_caption <- sprintf(paste(
+  "Chromosome 22, fixed 250 kb LD blocks; the GWAS combines %s and %s discovery samples at %.0f:%.0f.",
+  "PRS-CS with automatic &phi;. Means over replicates with Monte Carlo standard errors in parentheses; within a replicate",
+  "every method analyses the same simulated GWAS and scores the same target individuals. PRS-MIX at <i>w</i> = 1.0 and",
+  "0.0 is identical to %s-only and %s-only PRS-CS. The seed rerun repeats %s-only PRS-CS with a different sampler seed",
+  "and measures run-to-run variation. <sup>*</sup>Generating weight."), pa, pb, 100 * w0, 100 * (1 - w0), pa, pb, pa)
+captions <- list(
+  null = sprintf(paste("Null GWAS (no true effects, %d replicates). LD-fit loss is the excess Gaussian loss (ridge 0.001) of each",
+                       "method's LD matrix over the mixed matrix at the generating weight; lower is better. Null score variance",
+                       "is the variance of target-sample scores relative to %s-only PRS-CS for the same GWAS. %s"), n_null, pa, common_caption),
+  nonnull = sprintf(paste("Non-null GWAS (sparse causal effects shared across ancestries, %d replicates). Top-10%% overlap is the",
+                          "share of target individuals in a method's top score decile who are also in %s-only PRS-CS's top decile;",
+                          "correlation is between their scores. <i>r</i><sup>2</sup> is the squared correlation between scores and",
+                          "true genetic values. %s"), n_nonnull, pa, common_caption),
+  seed_contrast = sprintf(paste("Replicate-paired differences, each method minus the %s-only seed rerun, with the standard error of the",
+                                "paired difference in parentheses. Every quantity is first measured against %s-only PRS-CS, as in",
+                                "Tables 1 and 2, so the differences show how far a method moves scores beyond what a new sampler seed",
+                                "alone does. Negative overlap and correlation differences mean larger changes than run-to-run variation;",
+                                "pp, percentage points. <sup>*</sup>Generating weight."), pa, pa),
+  settings = "Simulation and analysis settings for this study.")
+titles <- c(null = "Table 1. Null GWAS simulation", nonnull = "Table 2. Non-null GWAS simulation",
+            seed_contrast = "Table 3. Replicate-paired differences against the seed rerun", settings = "Table 4. Simulation settings")
+section <- function(name, tab) c("<section>", sprintf("<h2>%s</h2>", titles[[name]]),
+                                 sprintf("<p class=\"cap\">%s</p>", captions[[name]]), "<div class=\"wrap\">", tab, "</div>", "</section>")
+head_commit <- git("rev-parse", "HEAD")
 html <- c(
   "<!doctype html>", "<html lang=\"en\">", "<head>", "<meta charset=\"utf-8\">",
   "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
-  sprintf("<title>%s simulation tables</title>", basename(normalizePath(out_dir))),
+  sprintf("<title>%s tables</title>", basename(normalizePath(out_dir))),
   "<!-- Generated by inst/scripts/null_sim/12_paper_tables.R; do not edit. -->",
   "<style>",
-  "body { margin: 0; padding: 32px 16px 56px; background: #fdfdfc; color: #141414; font: 16px/1.45 \"STIX Two Text\", \"Times New Roman\", Times, serif; }",
-  "main { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }",
-  "h1 { font-size: 20px; font-weight: 600; margin: 0; }",
-  "h2 { font-size: 18px; font-weight: 600; margin: 8px 0 -16px; border-top: 1px solid #c9ccd0; padding-top: 28px; }",
-  "tr.seed > * { font-style: italic; }",
-  ".meta { font: 12px/1.5 ui-monospace, Menlo, monospace; color: #555a60; margin: 6px 0 0; }",
-  "figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }",
-  "figcaption { max-width: 82ch; font-size: 15px; }",
+  "body { margin: 0; padding: 40px 24px 56px; background: #fff; color: #111; font: 15px/1.45 Georgia, \"Times New Roman\", Times, serif; }",
+  "main { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }",
+  "h2 { font: 600 17px/1.3 -apple-system, \"Helvetica Neue\", Helvetica, Arial, sans-serif; margin: 0 0 8px; }",
+  ".cap { margin: 0 0 14px; font-size: 14px; max-width: none; }",
   ".wrap { overflow-x: auto; }",
-  "table { border-collapse: collapse; font-variant-numeric: tabular-nums lining-nums; font-size: 15px; }",
-  "th, td { padding: 4px 12px; text-align: right; white-space: nowrap; vertical-align: baseline; font-weight: 400; }",
-  "th:first-child { text-align: left; padding-left: 4px; }",
-  "thead tr:first-child th { border-top: 1.6px solid #141414; padding-top: 8px; }",
-  "thead th.group { text-align: center; box-shadow: inset 0 -0.7px 0 #141414; }",
-  "tbody tr:first-child > * { border-top: 0.9px solid #141414; padding-top: 8px; }",
-  "tbody tr:last-child > * { border-bottom: 1.6px solid #141414; padding-bottom: 8px; }",
-  "tr.w0 { background: #eef3f9; }",
-  ".ci { font-size: 0.78em; color: #555a60; margin-left: 3px; }",
-  ".indent { display: inline-block; width: 1.2em; }",
-  "@media (prefers-color-scheme: dark) { body { background: #17191c; color: #e9eaec; } .meta, .ci { color: #a2a7ad; }",
-  "  thead tr:first-child th, tbody tr:first-child > *, tbody tr:last-child > * { border-color: #e9eaec; }",
-  "  thead th.group { box-shadow: inset 0 -0.7px 0 #e9eaec; } tr.w0 { background: #1f2a36; } }",
+  "table { border-collapse: collapse; width: 100%; font-variant-numeric: lining-nums tabular-nums; font-size: 14.5px; }",
+  "th, td { padding: 4px 10px; text-align: center; white-space: nowrap; vertical-align: baseline; }",
+  "th:nth-child(-n+2), td:nth-child(-n+2) { text-align: left; }",
+  "thead th { font-weight: 700; }",
+  "thead tr.top th { border-top: 2px solid #111; padding-top: 6px; }",
+  "thead tr:last-child th { border-bottom: 1px solid #111; padding-bottom: 6px; }",
+  "thead th.grp { font-weight: 700; border-bottom: 1px solid #111; }",
+  "tbody tr:last-child td { border-bottom: 2px solid #111; padding-bottom: 6px; }",
+  "tbody tr:first-child td { padding-top: 6px; }",
+  "footer { font: 12px/1.5 -apple-system, \"Helvetica Neue\", Helvetica, Arial, sans-serif; color: #666; }",
+  "code { font-size: 11.5px; }",
   "</style>", "</head>", "<body>", "<main>",
-  "<header>", sprintf("<h1>Simulation tables: %s</h1>", basename(normalizePath(out_dir))),
-  sprintf("<p class=\"meta\">The first two tables preview table_null.tex and table_nonnull.tex; the full weight sweep below is for review only. All numbers are in tables.tsv. Generated at PRS-MIX %s.</p>", substr(git("rev-parse", "HEAD"), 1, 7)),
-  "</header>",
-  "<figure>",
-  sprintf(paste("<figcaption><b>Null GWAS</b> (%d replicates). %s LD-fit loss: excess Gaussian loss (ridge 0.001) of each method's LD matrix",
-                "over the mixed matrix at the generating weight; lower is better. Null score variance: variance of target-sample scores",
-                "relative to %s-only PRS-CS for the same simulated GWAS. The seed rerun repeats %s-only PRS-CS with a different sampler seed.</figcaption>"),
-          n_null, design, pa, pa),
-  "<div class=\"wrap\">", null_html, "</div>", "</figure>",
-  "<figure>",
-  sprintf(paste("<figcaption><b>Non-null GWAS</b> (%d replicates), sparse causal effects shared across ancestries. %s Top-10%% overlap:",
-                "share of target individuals in a method's top score decile who are also in the top decile under %s-only PRS-CS.",
-                "<i>r</i><sup>2</sup>: squared correlation between scores and true genetic values.</figcaption>"),
-          n_nonnull, design, pa),
-  "<div class=\"wrap\">", nonnull_html, "</div>", "</figure>",
-  "<h2>Full weight sweep</h2>",
-  "<figure>",
-  sprintf(paste("<figcaption><b>Null GWAS, every mixing weight</b> (%d replicates). Same measures as above. <i>w</i> = 1.0 and 0.0",
-                "are %s-only and %s-only PRS-CS. The last row reruns %s-only PRS-CS with a new sampler seed: how much",
-                "null-score variance changes by chance alone.</figcaption>"), n_null, pa, pb, pa),
-  "<div class=\"wrap\">", sweep_null_html, "</div>", "</figure>",
-  "<figure>",
-  sprintf(paste("<figcaption><b>Non-null GWAS, every mixing weight</b> (%d replicates). Overlap and correlation compare each",
-                "weight's scores with %s-only PRS-CS (<i>w</i> = 1.0) for the same simulated GWAS and target individuals. The last",
-                "row is the same comparison for a %s-only rerun with a new sampler seed, so it is the run-to-run baseline:",
-                "differences smaller than it are within sampler noise.</figcaption>"), n_nonnull, pa, pa),
-  "<div class=\"wrap\">", sweep_nonnull_html, "</div>", "</figure>",
-  "<figure>",
-  sprintf(paste("<figcaption><b>PRS-MIX against the seed rerun at the generating weight.</b> Per-replicate difference",
-                "between PRS-MIX (<i>w</i> = %.1f) and the %s-only seed rerun, each compared with %s-only PRS-CS; negative",
-                "values mean PRS-MIX moves scores further from PRS-CS than a seed change does. Mean and bootstrap 95%%",
-                "confidence interval over %d replicates.</figcaption>"), w0, pa, pa, n_nonnull),
-  "<div class=\"wrap\">", contrast_html, "</div>", "</figure>",
+  section("null", html_table("null")),
+  section("nonnull", html_table("nonnull")),
+  section("seed_contrast", html_table("seed_contrast")),
+  section("settings", html_settings),
+  sprintf(paste("<footer>Rendered from <code>%s/inputs/</code> by <code>%s</code> at PRS-MIX %s. The <code>.tex</code> files in",
+                "the same folder hold the same values, and <code>tables.tsv</code> holds them unrounded with replicate",
+                "counts.</footer>"), out_dir, program, substr(head_commit, 1, 7)),
   "</main>", "</body>", "</html>")
 writeLines(html, file.path(out_dir, "tables.html"))
 
 # ---- Manifest ------------------------------------------------------------
-program <- "inst/scripts/null_sim/12_paper_tables.R"
-head <- git("rev-parse", "HEAD")
+out_files <- c(table_null = "table_null.tex", table_nonnull = "table_nonnull.tex",
+               table_seed_contrast = "table_seed_contrast.tex", table_settings = "table_settings.tex",
+               tables_tsv = "tables.tsv", tables_html = "tables.html")
+outputs <- lapply(out_files, function(f) list(path = file.path(out_dir, f), sha256 = sha(file.path(out_dir, f))))
 prog_dirty <- length(git("status", "--porcelain", "--", program, "inst/scripts/null_sim/common.R")) > 0
-cmd <- paste("Rscript", program, paste(shQuote(args), collapse = " "))
-outputs <- lapply(c("table_null.tex", "table_nonnull.tex", "tables.tsv", "tables.html"), function(f) {
-  list(path = file.path(out_dir, f), sha256 = sha(file.path(out_dir, f)))
-})
-names(outputs) <- c("table_null", "table_nonnull", "tables_tsv", "tables_html")
 settings <- list(
   chromosome = 22, populations = pops, block_layout = "fixed 250 kb",
   generating_composition = stats::setNames(as.list(c(w0, 1 - w0)), pops),
-  mixing_weights = weights, phi_mode = phi_mode,
-  replicates = list(null = length(unique(pm$rep)), nonnull = length(unique(nn$rep))),
+  mixing_weights = seq(0, 1, by = 0.1), phi_mode = phi_mode,
+  replicates = list(null = n_null, nonnull = n_nonnull),
   seed_control = "single-panel arm rerun with sampler seed 2000 + rep (main runs use 1000 + rep)",
-  uncertainty = sprintf("mean over replicates, percentile bootstrap 95%% CI (%d resamples of replicates, seed %d)", n_boot, boot_seed),
+  uncertainty = "mean over replicates with Monte Carlo SE (SD / sqrt(n)); paired differences use the SE of the per-replicate difference",
   metric_definitions = list(
-    ld_fit_excess = "Gaussian LD-fit loss (ridge delta 0.001) of the arm's LD matrix to the generating covariance of the null z-scores, minus the loss at the generating weight; per replicate, then averaged",
-    null_score_var_pct = sprintf("100 * (variance of target scores / variance under %s-only PRS-CS - 1), null GWAS, paired by replicate", pa),
-    top10_overlap_pct = sprintf("share of target individuals in the arm's top score decile who are also in %s-only PRS-CS's top decile, non-null GWAS", pa),
-    r2 = "squared correlation between target scores and true genetic values, non-null GWAS"
-  )
-)
+    ld_fit_excess = "Gaussian LD-fit loss (ridge delta 0.001) of the method's LD matrix to the generating covariance of the null z-scores, minus the loss at the generating weight, per replicate",
+    null_var_pct = sprintf("100 * (variance of target scores / variance under %s-only PRS-CS - 1), null GWAS, per replicate", pa),
+    top10_pct = sprintf("share of target individuals in the method's top score decile also in %s-only PRS-CS's top decile, non-null GWAS", pa),
+    cor = sprintf("correlation of target scores with %s-only PRS-CS scores, non-null GWAS", pa),
+    r2 = "squared correlation between target scores and true genetic values, non-null GWAS",
+    seed_contrast = sprintf("per-replicate difference between the method and the %s-only seed rerun in null_var_pct, top10_pct (percentage points) and cor (x1000)", pa)))
 manifest <- list(
-  study = basename(normalizePath(out_dir)),
-  program = program, command = cmd,
-  asset_commit = head, program_uncommitted = prog_dirty,
+  study = basename(normalizePath(out_dir)), program = program,
+  command = paste("Rscript", program, paste(shQuote(args), collapse = " ")),
+  asset_commit = head_commit, program_uncommitted = prog_dirty,
   experiment_commit = unique(vapply(inputs, `[[`, "", "source_commit")),
   r_version = R.version.string,
   inputs = unname(lapply(inputs, function(x) x[c("path", "source", "source_commit", "sha256")])),
   outputs = outputs, settings = settings,
-  notes = paste("Replicates missing an arm are dropped from that arm's paired comparisons; n_rep per cell is in tables.tsv.",
-                "Experiment runs were made on RedHawk with the null-simulation job scripts (cluster/jobs/null_sim, not version-controlled).")
-)
+  notes = paste("Replicates missing an arm are dropped from that arm's paired comparisons; n per cell is in tables.tsv.",
+                "Experiment runs were made on RedHawk with the null-simulation job scripts (cluster/jobs/null_sim, not version-controlled)."))
 jsonlite::write_json(manifest, file.path(out_dir, "manifest.json"), auto_unbox = TRUE, pretty = TRUE, digits = NA)
-message(sprintf("Wrote %s (%d table cells) at PRS-MIX %s%s", out_dir, nrow(stats), substr(head, 1, 7),
+message(sprintf("Wrote %s (%d cells) at PRS-MIX %s%s", out_dir, nrow(cells), substr(head_commit, 1, 7),
                 if (prog_dirty) " with uncommitted program changes" else ""))

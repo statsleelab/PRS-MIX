@@ -31,4 +31,4 @@ Rules:
 
 | Study | Program | Contents |
 | --- | --- | --- |
-| `null_sim_eur_asn_250kb` | `inst/scripts/null_sim/12_paper_tables.R` | chr22, EUR+ASN 70:30 GWAS, 250 kb blocks, 100 null and 100 non-null replicates, phi auto: null and non-null summary tables, with the PRS-CS seed control |
+| `null_sim_eur_asn_250kb` | `inst/scripts/null_sim/12_paper_tables.R` | chr22, EUR+ASN 70:30 GWAS, 250 kb blocks, 100 null and 100 non-null replicates, phi auto: null and non-null tables over the full weight sweep, paired differences against the PRS-CS seed rerun, and settings (LaTeX and HTML) |
