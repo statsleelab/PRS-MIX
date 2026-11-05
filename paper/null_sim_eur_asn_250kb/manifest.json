@@ -2,7 +2,7 @@
   "study": "null_sim_eur_asn_250kb",
   "program": "inst/scripts/null_sim/12_paper_tables.R",
   "command": "Rscript inst/scripts/null_sim/12_paper_tables.R 'inst/scripts/results/null_sim_250kb_100rep' 'paper/null_sim_eur_asn_250kb'",
-  "asset_commit": "3f891bb99983e289cda20d30a9a38b4b6d48fea1",
+  "asset_commit": "84676fa58ed8574d9e1775c692ee9d8afe2b4ee2",
   "program_uncommitted": false,
   "experiment_commit": ["d5bb1e3e3a90721fc955b95ee69b1e78ddb0b0b7", "7e8a87f364a24d87b6e92966f18574bdd0bdfaad"],
   "r_version": "R version 4.6.1 (2026-06-24)",
@@ -29,19 +29,27 @@
   "outputs": {
     "table_null": {
       "path": "paper/null_sim_eur_asn_250kb/table_null.tex",
-      "sha256": "f581e3ea0065281d82bca2e309553c987e2be747aed709487f417cdc2449ac02"
+      "sha256": "6dd6c489aec5c3b2d18d56ed9b3a3ca45100e50c3c6fa3857b44256d03f01b4a"
     },
     "table_nonnull": {
       "path": "paper/null_sim_eur_asn_250kb/table_nonnull.tex",
-      "sha256": "651bf9d0caba0fe7f5bc8e16b9847ef365ea234c5355e7da5bef150a842babe8"
+      "sha256": "78c8bc739225b1768436c8f56f23593502403ac9d2d3206d9d7c7ece3ceb1a33"
+    },
+    "table_seed_contrast": {
+      "path": "paper/null_sim_eur_asn_250kb/table_seed_contrast.tex",
+      "sha256": "b7dca207a5f7802b6db3c33aae3b9d82208d639f8f8adb71833fcfc7e9269e6f"
+    },
+    "table_settings": {
+      "path": "paper/null_sim_eur_asn_250kb/table_settings.tex",
+      "sha256": "e1ea94e48caa8ab0ea51eb79e474b6a62a8ba84fdb67151f9a652117fd8d8dfa"
     },
     "tables_tsv": {
       "path": "paper/null_sim_eur_asn_250kb/tables.tsv",
-      "sha256": "0414bde3fef2a4ea7345e376f30851a2c09f561e605ac63c453dfa815b66d2f3"
+      "sha256": "b6069551d1281d40cfd0ac13a311eb030dae6938d3eeca995cb8705696394d61"
     },
     "tables_html": {
       "path": "paper/null_sim_eur_asn_250kb/tables.html",
-      "sha256": "8f1fd796958eacbb68b32618e69299dd7bd1638448789b5559b155cc0f8c2e48"
+      "sha256": "095384bbf51604dad1a0e51a71baafd3dd5356e28cd79e7b04d18925f67fcd78"
     }
   },
   "settings": {
@@ -52,20 +60,22 @@
       "EUR": 0.7,
       "ASN": 0.3
     },
-    "mixing_weights": [0.9, 0.7, 0.5],
+    "mixing_weights": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
     "phi_mode": "auto",
     "replicates": {
       "null": 100,
       "nonnull": 100
     },
     "seed_control": "single-panel arm rerun with sampler seed 2000 + rep (main runs use 1000 + rep)",
-    "uncertainty": "mean over replicates, percentile bootstrap 95% CI (10000 resamples of replicates, seed 20261105)",
+    "uncertainty": "mean over replicates with Monte Carlo SE (SD / sqrt(n)); paired differences use the SE of the per-replicate difference",
     "metric_definitions": {
-      "ld_fit_excess": "Gaussian LD-fit loss (ridge delta 0.001) of the arm's LD matrix to the generating covariance of the null z-scores, minus the loss at the generating weight; per replicate, then averaged",
-      "null_score_var_pct": "100 * (variance of target scores / variance under EUR-only PRS-CS - 1), null GWAS, paired by replicate",
-      "top10_overlap_pct": "share of target individuals in the arm's top score decile who are also in EUR-only PRS-CS's top decile, non-null GWAS",
-      "r2": "squared correlation between target scores and true genetic values, non-null GWAS"
+      "ld_fit_excess": "Gaussian LD-fit loss (ridge delta 0.001) of the method's LD matrix to the generating covariance of the null z-scores, minus the loss at the generating weight, per replicate",
+      "null_var_pct": "100 * (variance of target scores / variance under EUR-only PRS-CS - 1), null GWAS, per replicate",
+      "top10_pct": "share of target individuals in the method's top score decile also in EUR-only PRS-CS's top decile, non-null GWAS",
+      "cor": "correlation of target scores with EUR-only PRS-CS scores, non-null GWAS",
+      "r2": "squared correlation between target scores and true genetic values, non-null GWAS",
+      "seed_contrast": "per-replicate difference between the method and the EUR-only seed rerun in null_var_pct, top10_pct (percentage points) and cor (x1000)"
     }
   },
-  "notes": "Replicates missing an arm are dropped from that arm's paired comparisons; n_rep per cell is in tables.tsv. Experiment runs were made on RedHawk with the null-simulation job scripts (cluster/jobs/null_sim, not version-controlled)."
+  "notes": "Replicates missing an arm are dropped from that arm's paired comparisons; n per cell is in tables.tsv. Experiment runs were made on RedHawk with the null-simulation job scripts (cluster/jobs/null_sim, not version-controlled)."
 }
