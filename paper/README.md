@@ -1,0 +1,33 @@
+# Curated paper evidence
+
+Results selected for the PRS-MIX manuscript
+([statsleelab/PRSMIX_manuscript](https://github.com/statsleelab/PRSMIX_manuscript)).
+Everything here is frozen and committed. The manuscript imports from this
+folder only, through its explicit import step. It never reads working outputs
+(`inst/scripts/results/`), scratch directories or cluster outputs.
+
+One folder per study:
+
+```text
+paper/<study>/
+  inputs/          frozen copies of the metric tables the assets are computed from
+  *.tex            generated LaTeX table bodies (no caption; the manuscript adds it)
+  tables.tsv       every number in the tables, unrounded, with n per cell
+  manifest.json    program, command, commits, settings, input and output sha256
+```
+
+Rules:
+
+- Generate assets with a committed program, from committed inputs. Commit the
+  program first, run it, then commit the outputs, so `manifest.json` records
+  the exact program commit (`asset_commit`) and the commit of the inputs
+  (`experiment_commit`).
+- Never edit generated files by hand. Change the program or inputs and
+  regenerate.
+- Keep panels, genotypes, posterior draws and logs out of this folder.
+
+## Studies
+
+| Study | Program | Contents |
+| --- | --- | --- |
+| `null_sim_eur_asn_250kb` | `inst/scripts/null_sim/12_paper_tables.R` | chr22, EUR+ASN 70:30 GWAS, 250 kb blocks, 100 null and 100 non-null replicates, phi auto: null and non-null summary tables, with the PRS-CS seed control |
