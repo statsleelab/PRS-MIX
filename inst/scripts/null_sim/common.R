@@ -65,8 +65,10 @@ ns_read_phi <- function(log_file) {
   as.numeric(sub(".*:\\s*([-+0-9.eE]+).*", "\\1", hit[length(hit)]))
 }
 
-# Arm name -> EUR weight: mix_w<w>, single_<pops[1]> = 1, single_<pops[2]> = 0.
+# Arm name -> weight on pops[1]: mix_w<w>, single_<pops[1]> = 1, single_<pops[2]> = 0.
+# A _seed<k> suffix marks a rerun of the same arm with another sampler seed.
 ns_arm_weight <- function(arm, pops) {
+  arm <- sub("_seed[0-9]+$", "", arm)
   if (grepl("^mix_w", arm)) as.numeric(sub("^mix_w", "", arm))
   else if (arm == paste0("single_", pops[1])) 1 else 0
 }
