@@ -12,6 +12,7 @@ One folder per study:
 paper/<study>/
   inputs/          frozen copies of the metric tables the assets are computed from
   *.tex            generated LaTeX table bodies (no caption; the manuscript adds it)
+  tables.html      browser preview of the same tables (open locally; not imported)
   tables.tsv       every number in the tables, unrounded, with n per cell
   manifest.json    program, command, commits, settings, input and output sha256
 ```
