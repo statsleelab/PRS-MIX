@@ -1,0 +1,67 @@
+{
+  "study": "null_sim_eur_asn_250kb",
+  "program": "inst/scripts/null_sim/12_paper_tables.R",
+  "command": "Rscript inst/scripts/null_sim/12_paper_tables.R 'inst/scripts/results/null_sim_250kb_100rep' 'paper/null_sim_eur_asn_250kb'",
+  "asset_commit": "6111ef3d16a55949e496577492c3bb9f791d7587",
+  "program_uncommitted": false,
+  "experiment_commit": ["d5bb1e3e3a90721fc955b95ee69b1e78ddb0b0b7", "7e8a87f364a24d87b6e92966f18574bdd0bdfaad"],
+  "r_version": "R version 4.6.1 (2026-06-24)",
+  "inputs": [
+    {
+      "path": "paper/null_sim_eur_asn_250kb/inputs/prscs_metrics.tsv",
+      "source": "inst/scripts/results/null_sim_250kb_100rep/prscs_metrics.tsv",
+      "source_commit": "d5bb1e3e3a90721fc955b95ee69b1e78ddb0b0b7",
+      "sha256": "5ab45bac65cb642c3bfb20c761c856e69b72780344703128ca537565552a6616"
+    },
+    {
+      "path": "paper/null_sim_eur_asn_250kb/inputs/nonnull_metrics.tsv",
+      "source": "inst/scripts/results/null_sim_250kb_100rep/nonnull_metrics.tsv",
+      "source_commit": "d5bb1e3e3a90721fc955b95ee69b1e78ddb0b0b7",
+      "sha256": "dfe27289b7445f3438774ceae1e966b12dbca139cc8af490d42043bf818dcdeb"
+    },
+    {
+      "path": "paper/null_sim_eur_asn_250kb/inputs/ld_fit.tsv",
+      "source": "inst/scripts/results/null_sim_250kb_100rep/ld_fit.tsv",
+      "source_commit": "7e8a87f364a24d87b6e92966f18574bdd0bdfaad",
+      "sha256": "eb0e320f6ad6c35f96182854f0fc2d5f2026d8713d065392e1fefb95b041c269"
+    }
+  ],
+  "outputs": {
+    "table_null": {
+      "path": "paper/null_sim_eur_asn_250kb/table_null.tex",
+      "sha256": "f581e3ea0065281d82bca2e309553c987e2be747aed709487f417cdc2449ac02"
+    },
+    "table_nonnull": {
+      "path": "paper/null_sim_eur_asn_250kb/table_nonnull.tex",
+      "sha256": "651bf9d0caba0fe7f5bc8e16b9847ef365ea234c5355e7da5bef150a842babe8"
+    },
+    "tables_tsv": {
+      "path": "paper/null_sim_eur_asn_250kb/tables.tsv",
+      "sha256": "5411274e254ffa7e6bf96c3cf79c94d41432f8a4d741487bc904c5a8c2339d0c"
+    }
+  },
+  "settings": {
+    "chromosome": 22,
+    "populations": ["EUR", "ASN"],
+    "block_layout": "fixed 250 kb",
+    "generating_composition": {
+      "EUR": 0.7,
+      "ASN": 0.3
+    },
+    "mixing_weights": [0.9, 0.7, 0.5],
+    "phi_mode": "auto",
+    "replicates": {
+      "null": 100,
+      "nonnull": 100
+    },
+    "seed_control": "single-panel arm rerun with sampler seed 2000 + rep (main runs use 1000 + rep)",
+    "uncertainty": "mean over replicates, percentile bootstrap 95% CI (10000 resamples of replicates, seed 20261105)",
+    "metric_definitions": {
+      "ld_fit_excess": "Gaussian LD-fit loss (ridge delta 0.001) of the arm's LD matrix to the generating covariance of the null z-scores, minus the loss at the generating weight; per replicate, then averaged",
+      "null_score_var_pct": "100 * (variance of target scores / variance under EUR-only PRS-CS - 1), null GWAS, paired by replicate",
+      "top10_overlap_pct": "share of target individuals in the arm's top score decile who are also in EUR-only PRS-CS's top decile, non-null GWAS",
+      "r2": "squared correlation between target scores and true genetic values, non-null GWAS"
+    }
+  },
+  "notes": "Replicates missing an arm are dropped from that arm's paired comparisons; n_rep per cell is in tables.tsv. Experiment runs were made on RedHawk with the null-simulation job scripts (cluster/jobs/null_sim, not version-controlled)."
+}
