@@ -2,7 +2,7 @@
   "study": "null_sim_eur_asn_250kb",
   "program": "inst/scripts/null_sim/12_paper_tables.R",
   "command": "Rscript inst/scripts/null_sim/12_paper_tables.R 'inst/scripts/results/null_sim_250kb_100rep' 'paper/null_sim_eur_asn_250kb'",
-  "asset_commit": "84676fa58ed8574d9e1775c692ee9d8afe2b4ee2",
+  "asset_commit": "9df5ba8552bacf82c3b68d672a7c83ecd0d6f9d0",
   "program_uncommitted": false,
   "experiment_commit": ["d5bb1e3e3a90721fc955b95ee69b1e78ddb0b0b7", "7e8a87f364a24d87b6e92966f18574bdd0bdfaad"],
   "r_version": "R version 4.6.1 (2026-06-24)",
@@ -29,15 +29,15 @@
   "outputs": {
     "table_null": {
       "path": "paper/null_sim_eur_asn_250kb/table_null.tex",
-      "sha256": "6dd6c489aec5c3b2d18d56ed9b3a3ca45100e50c3c6fa3857b44256d03f01b4a"
+      "sha256": "0449e3175af72024217d4fef92a4d61df4a218581d4a196fc71aaca95b787f30"
     },
     "table_nonnull": {
       "path": "paper/null_sim_eur_asn_250kb/table_nonnull.tex",
-      "sha256": "78c8bc739225b1768436c8f56f23593502403ac9d2d3206d9d7c7ece3ceb1a33"
+      "sha256": "9b6a0906eb151a5fddfd25146b818118afd9851eb58a17cafb45669d91826cc5"
     },
     "table_seed_contrast": {
       "path": "paper/null_sim_eur_asn_250kb/table_seed_contrast.tex",
-      "sha256": "b7dca207a5f7802b6db3c33aae3b9d82208d639f8f8adb71833fcfc7e9269e6f"
+      "sha256": "96154e60a74e3ee36cf4172359798c0752c908e9a2be10fcfbfa16ea2e21b173"
     },
     "table_settings": {
       "path": "paper/null_sim_eur_asn_250kb/table_settings.tex",
@@ -45,11 +45,11 @@
     },
     "tables_tsv": {
       "path": "paper/null_sim_eur_asn_250kb/tables.tsv",
-      "sha256": "b6069551d1281d40cfd0ac13a311eb030dae6938d3eeca995cb8705696394d61"
+      "sha256": "83cce52e21f30d35e3785444d3f6ba5fed927a1d4ce4e2ce95992f40aee19338"
     },
     "tables_html": {
       "path": "paper/null_sim_eur_asn_250kb/tables.html",
-      "sha256": "095384bbf51604dad1a0e51a71baafd3dd5356e28cd79e7b04d18925f67fcd78"
+      "sha256": "4693eb8b4eb31b27f605a363dfccfa1b7051e02189dd9cc6481217213d2531f2"
     }
   },
   "settings": {
@@ -67,14 +67,14 @@
       "nonnull": 100
     },
     "seed_control": "single-panel arm rerun with sampler seed 2000 + rep (main runs use 1000 + rep)",
-    "uncertainty": "mean over replicates with Monte Carlo SE (SD / sqrt(n)); paired differences use the SE of the per-replicate difference",
+    "uncertainty": "mean over replicates with Monte Carlo SE (SD / sqrt(n)); paired differences use the SE of the per-replicate difference; variance ratios use the log scale with delta-method SE",
     "metric_definitions": {
       "ld_fit_excess": "Gaussian LD-fit loss (ridge delta 0.001) of the method's LD matrix to the generating covariance of the null z-scores, minus the loss at the generating weight, per replicate",
-      "null_var_pct": "100 * (variance of target scores / variance under EUR-only PRS-CS - 1), null GWAS, per replicate",
+      "null_var_pct": "100 * (exp(mean over replicates of log(variance of target scores / variance under EUR-only PRS-CS)) - 1), null GWAS; delta-method SE",
       "top10_pct": "share of target individuals in the method's top score decile also in EUR-only PRS-CS's top decile, non-null GWAS",
       "cor": "correlation of target scores with EUR-only PRS-CS scores, non-null GWAS",
       "r2": "squared correlation between target scores and true genetic values, non-null GWAS",
-      "seed_contrast": "per-replicate difference between the method and the EUR-only seed rerun in null_var_pct, top10_pct (percentage points) and cor (x1000)"
+      "seed_contrast": "null score variance of the method relative to the EUR-only seed rerun (geometric mean percentage change); per-replicate difference between the method and the seed rerun in top10_pct (percentage points) and cor (x1000)"
     }
   },
   "notes": "Replicates missing an arm are dropped from that arm's paired comparisons; n per cell is in tables.tsv. Experiment runs were made on RedHawk with the null-simulation job scripts (cluster/jobs/null_sim, not version-controlled)."
