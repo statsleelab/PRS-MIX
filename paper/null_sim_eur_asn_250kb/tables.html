@@ -9,6 +9,8 @@
 body { margin: 0; padding: 32px 16px 56px; background: #fdfdfc; color: #141414; font: 16px/1.45 "STIX Two Text", "Times New Roman", Times, serif; }
 main { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
 h1 { font-size: 20px; font-weight: 600; margin: 0; }
+h2 { font-size: 18px; font-weight: 600; margin: 8px 0 -16px; border-top: 1px solid #c9ccd0; padding-top: 28px; }
+tr.seed > * { font-style: italic; }
 .meta { font: 12px/1.5 ui-monospace, Menlo, monospace; color: #555a60; margin: 6px 0 0; }
 figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }
 figcaption { max-width: 82ch; font-size: 15px; }
@@ -32,7 +34,7 @@ tr.w0 { background: #eef3f9; }
 <main>
 <header>
 <h1>Simulation tables: null_sim_eur_asn_250kb</h1>
-<p class="meta">Preview of table_null.tex and table_nonnull.tex, generated from the same numbers (tables.tsv) at PRS-MIX 6e52e3a.</p>
+<p class="meta">The first two tables preview table_null.tex and table_nonnull.tex; the full weight sweep below is for review only. All numbers are in tables.tsv. Generated at PRS-MIX 3f891bb.</p>
 </header>
 <figure>
 <figcaption><b>Null GWAS</b> (100 replicates). Chromosome 22, 250 kb LD blocks. GWAS combining EUR and ASN discovery samples at 70:30; PRS-CS with phi = auto. Mean over replicates with percentile bootstrap 95% confidence intervals (10,000 resamples of replicates). <sup>*</sup>Generating weight. LD-fit loss: excess Gaussian loss (ridge 0.001) of each method's LD matrix over the mixed matrix at the generating weight; lower is better. Null score variance: variance of target-sample scores relative to EUR-only PRS-CS for the same simulated GWAS. The seed rerun repeats EUR-only PRS-CS with a different sampler seed.</figcaption>
@@ -68,6 +70,71 @@ tr.w0 { background: #eef3f9; }
 <tr class="w0"><th scope="row">PRS-MIX, <i>w</i><sub>EUR</sub> = 0.7<sup>*</sup></th><td>90.6 <span class="ci">[90.3, 91.0]</span></td><td>89.4 <span class="ci">[89.0, 89.8]</span></td><td>0.591 <span class="ci">[0.581, 0.601]</span></td><td>0.582 <span class="ci">[0.572, 0.591]</span></td></tr>
 <tr><th scope="row">PRS-MIX, <i>w</i><sub>EUR</sub> = 0.5</th><td>89.4 <span class="ci">[89.1, 89.8]</span></td><td>88.0 <span class="ci">[87.6, 88.4]</span></td><td>0.588 <span class="ci">[0.578, 0.598]</span></td><td>0.578 <span class="ci">[0.568, 0.588]</span></td></tr>
 <tr><th scope="row">PRS-CS, ASN panel</th><td>80.5 <span class="ci">[79.6, 81.4]</span></td><td>81.6 <span class="ci">[80.9, 82.2]</span></td><td>0.550 <span class="ci">[0.538, 0.562]</span></td><td>0.549 <span class="ci">[0.539, 0.560]</span></td></tr>
+</tbody>
+</table>
+</div>
+</figure>
+<h2>Full weight sweep</h2>
+<figure>
+<figcaption><b>Null GWAS, every mixing weight</b> (100 replicates). Same measures as above. <i>w</i> = 1.0 and 0.0 are EUR-only and ASN-only PRS-CS. The last row reruns EUR-only PRS-CS with a new sampler seed: how much null-score variance changes by chance alone.</figcaption>
+<div class="wrap">
+<table>
+<thead>
+<tr><th></th><th>LD-fit loss</th><th colspan="2" class="group">Null score variance vs. EUR-only (%)</th></tr>
+<tr><th>EUR weight <i>w</i></th><th>above <i>w</i> = 0.7</th><th>EUR targets</th><th>ASN targets</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">1.0 (EUR-only PRS-CS)</th><td>1.241 <span class="ci">[1.223, 1.260]</span></td><td>0</td><td>0</td></tr>
+<tr><th scope="row">0.9</th><td>0.078 <span class="ci">[0.076, 0.080]</span></td><td>1.1 <span class="ci">[&minus;1.3, 3.6]</span></td><td>0.8 <span class="ci">[&minus;1.8, 3.3]</span></td></tr>
+<tr><th scope="row">0.8</th><td>0.007 <span class="ci">[0.007, 0.008]</span></td><td>&minus;0.2 <span class="ci">[&minus;2.6, 2.2]</span></td><td>&minus;1.7 <span class="ci">[&minus;4.1, 0.9]</span></td></tr>
+<tr class="w0"><th scope="row">0.7<sup>*</sup></th><td>0</td><td>&minus;0.6 <span class="ci">[&minus;3.0, 1.9]</span></td><td>&minus;3.1 <span class="ci">[&minus;5.5, &minus;0.6]</span></td></tr>
+<tr><th scope="row">0.6</th><td>0.014 <span class="ci">[0.013, 0.014]</span></td><td>&minus;0.1 <span class="ci">[&minus;2.8, 2.7]</span></td><td>&minus;3.3 <span class="ci">[&minus;5.8, &minus;0.6]</span></td></tr>
+<tr><th scope="row">0.5</th><td>0.040 <span class="ci">[0.039, 0.040]</span></td><td>1.9 <span class="ci">[&minus;0.7, 4.6]</span></td><td>&minus;1.3 <span class="ci">[&minus;3.9, 1.2]</span></td></tr>
+<tr><th scope="row">0.4</th><td>0.078 <span class="ci">[0.077, 0.080]</span></td><td>0.9 <span class="ci">[&minus;1.3, 3.2]</span></td><td>&minus;3.4 <span class="ci">[&minus;5.6, &minus;1.3]</span></td></tr>
+<tr><th scope="row">0.3</th><td>0.137 <span class="ci">[0.136, 0.139]</span></td><td>4.0 <span class="ci">[1.7, 6.4]</span></td><td>&minus;1.0 <span class="ci">[&minus;3.2, 1.3]</span></td></tr>
+<tr><th scope="row">0.2</th><td>0.239 <span class="ci">[0.237, 0.242]</span></td><td>6.6 <span class="ci">[3.8, 9.5]</span></td><td>0.3 <span class="ci">[&minus;2.3, 3.1]</span></td></tr>
+<tr><th scope="row">0.1</th><td>0.477 <span class="ci">[0.473, 0.482]</span></td><td>8.4 <span class="ci">[5.8, 11.1]</span></td><td>1.3 <span class="ci">[&minus;1.3, 3.7]</span></td></tr>
+<tr><th scope="row">0.0 (ASN-only PRS-CS)</th><td>3.261 <span class="ci">[3.214, 3.308]</span></td><td>11.7 <span class="ci">[8.6, 14.9]</span></td><td>3.5 <span class="ci">[0.7, 6.5]</span></td></tr>
+<tr class="seed"><th scope="row">EUR-only PRS-CS, new sampler seed</th><td>&ndash;</td><td>1.7 <span class="ci">[&minus;1.4, 4.9]</span></td><td>1.9 <span class="ci">[&minus;1.3, 5.2]</span></td></tr>
+</tbody>
+</table>
+</div>
+</figure>
+<figure>
+<figcaption><b>Non-null GWAS, every mixing weight</b> (100 replicates). Overlap and correlation compare each weight's scores with EUR-only PRS-CS (<i>w</i> = 1.0) for the same simulated GWAS and target individuals. The last row is the same comparison for a EUR-only rerun with a new sampler seed, so it is the run-to-run baseline: differences smaller than it are within sampler noise.</figcaption>
+<div class="wrap">
+<table>
+<thead>
+<tr><th></th><th colspan="2" class="group">Top-10% overlap with EUR-only (%)</th><th colspan="2" class="group">Score correlation with EUR-only</th><th colspan="2" class="group"><i>r</i><sup>2</sup> with true genetic value</th></tr>
+<tr><th>EUR weight <i>w</i></th><th>EUR targets</th><th>ASN targets</th><th>EUR targets</th><th>ASN targets</th><th>EUR targets</th><th>ASN targets</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">1.0 (EUR-only PRS-CS)</th><td>100.0 <span class="ci">[100.0, 100.0]</span></td><td>100.0 <span class="ci">[100.0, 100.0]</span></td><td>1.000 <span class="ci">[1.000, 1.000]</span></td><td>1.000 <span class="ci">[1.000, 1.000]</span></td><td>0.591 <span class="ci">[0.582, 0.600]</span></td><td>0.582 <span class="ci">[0.572, 0.592]</span></td></tr>
+<tr><th scope="row">0.9</th><td>91.1 <span class="ci">[90.8, 91.4]</span></td><td>90.3 <span class="ci">[89.9, 90.6]</span></td><td>0.992 <span class="ci">[0.992, 0.993]</span></td><td>0.990 <span class="ci">[0.990, 0.991]</span></td><td>0.591 <span class="ci">[0.582, 0.601]</span></td><td>0.583 <span class="ci">[0.573, 0.592]</span></td></tr>
+<tr><th scope="row">0.8</th><td>91.0 <span class="ci">[90.7, 91.4]</span></td><td>90.0 <span class="ci">[89.6, 90.4]</span></td><td>0.992 <span class="ci">[0.991, 0.992]</span></td><td>0.990 <span class="ci">[0.989, 0.991]</span></td><td>0.592 <span class="ci">[0.582, 0.601]</span></td><td>0.583 <span class="ci">[0.573, 0.592]</span></td></tr>
+<tr class="w0"><th scope="row">0.7<sup>*</sup></th><td>90.6 <span class="ci">[90.3, 91.0]</span></td><td>89.4 <span class="ci">[89.0, 89.8]</span></td><td>0.991 <span class="ci">[0.991, 0.992]</span></td><td>0.989 <span class="ci">[0.988, 0.990]</span></td><td>0.591 <span class="ci">[0.582, 0.600]</span></td><td>0.582 <span class="ci">[0.572, 0.591]</span></td></tr>
+<tr><th scope="row">0.6</th><td>90.1 <span class="ci">[89.8, 90.5]</span></td><td>89.0 <span class="ci">[88.7, 89.4]</span></td><td>0.990 <span class="ci">[0.990, 0.991]</span></td><td>0.988 <span class="ci">[0.987, 0.988]</span></td><td>0.591 <span class="ci">[0.581, 0.600]</span></td><td>0.581 <span class="ci">[0.571, 0.590]</span></td></tr>
+<tr><th scope="row">0.5</th><td>89.4 <span class="ci">[89.1, 89.8]</span></td><td>88.0 <span class="ci">[87.6, 88.4]</span></td><td>0.989 <span class="ci">[0.988, 0.990]</span></td><td>0.986 <span class="ci">[0.985, 0.987]</span></td><td>0.588 <span class="ci">[0.578, 0.598]</span></td><td>0.578 <span class="ci">[0.568, 0.587]</span></td></tr>
+<tr><th scope="row">0.4</th><td>88.6 <span class="ci">[88.2, 89.0]</span></td><td>87.2 <span class="ci">[86.8, 87.7]</span></td><td>0.987 <span class="ci">[0.987, 0.988]</span></td><td>0.984 <span class="ci">[0.983, 0.985]</span></td><td>0.585 <span class="ci">[0.575, 0.595]</span></td><td>0.576 <span class="ci">[0.566, 0.586]</span></td></tr>
+<tr><th scope="row">0.3</th><td>87.6 <span class="ci">[87.2, 88.0]</span></td><td>86.5 <span class="ci">[86.0, 87.0]</span></td><td>0.985 <span class="ci">[0.984, 0.986]</span></td><td>0.982 <span class="ci">[0.981, 0.983]</span></td><td>0.582 <span class="ci">[0.572, 0.592]</span></td><td>0.572 <span class="ci">[0.562, 0.582]</span></td></tr>
+<tr><th scope="row">0.2</th><td>86.3 <span class="ci">[85.9, 86.8]</span></td><td>85.2 <span class="ci">[84.7, 85.8]</span></td><td>0.981 <span class="ci">[0.980, 0.982]</span></td><td>0.978 <span class="ci">[0.977, 0.979]</span></td><td>0.576 <span class="ci">[0.566, 0.587]</span></td><td>0.567 <span class="ci">[0.557, 0.577]</span></td></tr>
+<tr><th scope="row">0.1</th><td>84.2 <span class="ci">[83.5, 84.8]</span></td><td>83.7 <span class="ci">[83.1, 84.2]</span></td><td>0.975 <span class="ci">[0.973, 0.977]</span></td><td>0.974 <span class="ci">[0.973, 0.975]</span></td><td>0.568 <span class="ci">[0.556, 0.579]</span></td><td>0.561 <span class="ci">[0.550, 0.571]</span></td></tr>
+<tr><th scope="row">0.0 (ASN-only PRS-CS)</th><td>80.5 <span class="ci">[79.7, 81.4]</span></td><td>81.6 <span class="ci">[80.9, 82.2]</span></td><td>0.962 <span class="ci">[0.958, 0.965]</span></td><td>0.966 <span class="ci">[0.964, 0.968]</span></td><td>0.550 <span class="ci">[0.537, 0.562]</span></td><td>0.549 <span class="ci">[0.539, 0.560]</span></td></tr>
+<tr class="seed"><th scope="row">EUR-only PRS-CS, new sampler seed</th><td>91.4 <span class="ci">[91.1, 91.7]</span></td><td>90.7 <span class="ci">[90.3, 91.1]</span></td><td>0.993 <span class="ci">[0.992, 0.993]</span></td><td>0.991 <span class="ci">[0.991, 0.992]</span></td><td>0.592 <span class="ci">[0.582, 0.600]</span></td><td>0.583 <span class="ci">[0.573, 0.592]</span></td></tr>
+</tbody>
+</table>
+</div>
+</figure>
+<figure>
+<figcaption><b>PRS-MIX against the seed rerun at the generating weight.</b> Per-replicate difference between PRS-MIX (<i>w</i> = 0.7) and the EUR-only seed rerun, each compared with EUR-only PRS-CS; negative values mean PRS-MIX moves scores further from PRS-CS than a seed change does. Mean and bootstrap 95% confidence interval over 100 replicates.</figcaption>
+<div class="wrap">
+<table>
+<thead>
+<tr><th></th><th colspan="2" class="group">Top-10% overlap (percentage points)</th><th colspan="2" class="group">Score correlation</th></tr>
+<tr><th>Comparison</th><th>EUR targets</th><th>ASN targets</th><th>EUR targets</th><th>ASN targets</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">PRS-MIX (<i>w</i> = 0.7) minus seed rerun</th><td>&minus;0.7 <span class="ci">[&minus;0.9, &minus;0.5]</span></td><td>&minus;1.3 <span class="ci">[&minus;1.7, &minus;1.0]</span></td><td>&minus;0.0013 <span class="ci">[&minus;0.0015, &minus;0.0011]</span></td><td>&minus;0.0021 <span class="ci">[&minus;0.0025, &minus;0.0017]</span></td></tr>
 </tbody>
 </table>
 </div>
