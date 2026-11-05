@@ -2,7 +2,7 @@
   "study": "null_sim_eur_asn_250kb",
   "program": "inst/scripts/null_sim/12_paper_tables.R",
   "command": "Rscript inst/scripts/null_sim/12_paper_tables.R 'inst/scripts/results/null_sim_250kb_100rep' 'paper/null_sim_eur_asn_250kb'",
-  "asset_commit": "6111ef3d16a55949e496577492c3bb9f791d7587",
+  "asset_commit": "6e52e3ad31b5fbcc3e4c0c7bf0fed1762263a6ef",
   "program_uncommitted": false,
   "experiment_commit": ["d5bb1e3e3a90721fc955b95ee69b1e78ddb0b0b7", "7e8a87f364a24d87b6e92966f18574bdd0bdfaad"],
   "r_version": "R version 4.6.1 (2026-06-24)",
@@ -38,6 +38,10 @@
     "tables_tsv": {
       "path": "paper/null_sim_eur_asn_250kb/tables.tsv",
       "sha256": "5411274e254ffa7e6bf96c3cf79c94d41432f8a4d741487bc904c5a8c2339d0c"
+    },
+    "tables_html": {
+      "path": "paper/null_sim_eur_asn_250kb/tables.html",
+      "sha256": "959b163dc4d82c632e555f42af6c0299befa99a2df7144885cf45d5aa12ccc4c"
     }
   },
   "settings": {
