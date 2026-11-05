@@ -24,7 +24,11 @@
 #
 # Cells are means over replicates with Monte Carlo standard errors (SD / sqrt(n)).
 # Comparisons are paired within replicate (same simulated GWAS and target
-# individuals); their SE is the SE of the paired difference.
+# individuals); their SE is the SE of the paired difference. Score-variance
+# ratios are averaged on the log scale and reported as a percentage change,
+# 100 (exp(mean log ratio) - 1), with a delta-method SE; averaging the ratio
+# itself would bias it upward (two equally variable runs would average > 0).
+# The reference row reads 0 (ref.), 100 (ref.) or 1 (ref.): its value by definition.
 #
 # Usage (from the PRS-MIX root, with the inputs committed):
 #   Rscript inst/scripts/null_sim/12_paper_tables.R <metrics_dir> <out_dir> \
@@ -91,20 +95,26 @@ ld_excess <- function(arm) {
   b <- ld[abs(ld$w - w0) < 1e-9, ]
   paired(stats::setNames(a$L, a$rep), stats::setNames(b$L, b$rep))
 }
-var_pct <- function(arm, p) {  # null score variance relative to the reference, %
-  v <- per_rep(pm, arm, paste0("score_var_", p))
-  r <- per_rep(pm, ref, paste0("score_var_", p))
-  k <- intersect(names(v), names(r))
-  stats::setNames(100 * (v[k] / r[k] - 1), k)
+log_var_ratio <- function(arm, base, p) {  # per-replicate log(var_arm / var_base)
+  col <- paste0("score_var_", p)
+  paired(log(per_rep(pm, arm, col)), log(per_rep(pm, base, col)))
 }
 
 cells <- list()
-put <- function(table, arm, column, x, note = "") {
+# scale = "log_pct": x holds per-replicate log ratios; report 100 (exp(mean) - 1)
+# with SE 100 exp(mean) SE(mean log ratio).
+put <- function(table, arm, column, x, note = "", scale = "mean") {
   x <- x[is.finite(x)]
   n <- length(x)
+  m <- if (n) mean(x) else NA_real_
+  se <- if (n > 1) stats::sd(x) / sqrt(n) else NA_real_
+  if (scale == "log_pct" && n) {
+    se <- 100 * exp(m) * se
+    m <- 100 * (exp(m) - 1)
+  }
   cells[[length(cells) + 1]] <<- data.frame(
     table = table, setting = setting, arm = arm, column = column, n = n,
-    mean = if (n) mean(x) else NA_real_, se = if (n > 1) stats::sd(x) / sqrt(n) else NA_real_, note = note)
+    mean = m, se = se, note = note, scale = scale)
 }
 for (arm in methods) {
   is_ref <- arm == ref
@@ -113,15 +123,15 @@ for (arm in methods) {
   put("null", arm, "replicates", numeric(0), as.character(sum(pm$arm == arm)))
   if (is_seed) put("null", arm, "ld_fit_excess", numeric(0), "n/a") else put("null", arm, "ld_fit_excess", ld_excess(arm))
   for (p in pops) {
-    if (is_ref) put("null", arm, paste0("null_var_pct_", p), numeric(0), "ref.")
-    else put("null", arm, paste0("null_var_pct_", p), var_pct(arm, p))
+    if (is_ref) put("null", arm, paste0("null_var_pct_", p), numeric(0), "0 (ref.)")
+    else put("null", arm, paste0("null_var_pct_", p), log_var_ratio(arm, ref, p), scale = "log_pct")
   }
   # Table 2: non-null GWAS.
   put("nonnull", arm, "replicates", numeric(0), as.character(sum(nn$arm == arm)))
   for (p in pops) {
     if (is_ref) {
-      put("nonnull", arm, paste0("top10_pct_", p), numeric(0), "ref.")
-      put("nonnull", arm, paste0("cor_", p), numeric(0), "ref.")
+      put("nonnull", arm, paste0("top10_pct_", p), numeric(0), "100 (ref.)")
+      put("nonnull", arm, paste0("cor_", p), numeric(0), "1 (ref.)")
     } else {
       put("nonnull", arm, paste0("top10_pct_", p), 100 * per_rep(nn, arm, sprintf("top10_%s_%s", pa, p)))
       put("nonnull", arm, paste0("cor_", p), per_rep(nn, arm, sprintf("cor_%s_%s", pa, p)))
@@ -130,7 +140,7 @@ for (arm in methods) {
   for (p in pops) put("nonnull", arm, paste0("r2_", p), per_rep(nn, arm, paste0("r2_", p)))
   # Table 3: method minus the seed rerun, paired by replicate.
   if (!is_ref && !is_seed) {
-    d_var <- lapply(stats::setNames(pops, pops), function(p) paired(var_pct(arm, p), var_pct(seed_arm, p)))
+    d_var <- lapply(stats::setNames(pops, pops), function(p) log_var_ratio(arm, seed_arm, p))
     d_top <- lapply(stats::setNames(pops, pops), function(p) {
       col <- sprintf("top10_%s_%s", pa, p)
       100 * paired(per_rep(nn, arm, col), per_rep(nn, seed_arm, col))
@@ -141,7 +151,7 @@ for (arm in methods) {
     })
     put("seed_contrast", arm, "pairs", numeric(0),
         sprintf("%d / %d", length(d_var[[1]]), length(d_top[[1]])))
-    for (p in pops) put("seed_contrast", arm, paste0("d_null_var_", p), d_var[[p]])
+    for (p in pops) put("seed_contrast", arm, paste0("d_null_var_", p), d_var[[p]], scale = "log_pct")
     for (p in pops) put("seed_contrast", arm, paste0("d_top10_", p), d_top[[p]])
     for (p in pops) put("seed_contrast", arm, paste0("d_cor_x1000_", p), d_cor[[p]])
   }
@@ -181,7 +191,7 @@ tables <- list(
                 col(paste0("d_top10_", pb), 2, "dtop", pb, signed = TRUE),
                 col(paste0("d_cor_x1000_", pa), 2, "dcor", pa, signed = TRUE),
                 col(paste0("d_cor_x1000_", pb), 2, "dcor", pb, signed = TRUE)),
-    groups = list(dvar = "Null score variance (pp)", dtop = "Top-10\\% overlap (pp)",
+    groups = list(dvar = "Null score variance (\\%)", dtop = "Top-10\\% overlap (pp)",
                   dcor = "Correlation $\\times 10^3$"))
 )
 method_label <- function(arm, tex) {
@@ -198,6 +208,7 @@ contrast_label <- function(arm, tex) {
 }
 fmt_num <- function(x, d, signed, tex) {
   s <- formatC(abs(x), format = "f", digits = d)
+  if (as.numeric(s) == 0) return(s)  # no sign on a value that rounds to zero
   sign <- if (x < 0) (if (tex) "$-$" else "&minus;") else if (signed && x > 0) "+" else ""
   paste0(sign, s)
 }
@@ -300,16 +311,19 @@ common_caption <- sprintf(paste(
 captions <- list(
   null = sprintf(paste("Null GWAS (no true effects, %d replicates). LD-fit loss is the excess Gaussian loss (ridge 0.001) of each",
                        "method's LD matrix over the mixed matrix at the generating weight; lower is better. Null score variance",
-                       "is the variance of target-sample scores relative to %s-only PRS-CS for the same GWAS. %s"), n_null, pa, common_caption),
+                       "compares the variance of target-sample scores with %s-only PRS-CS for the same GWAS, as a percentage change;",
+                       "negative values mean less spread in scores that carry no true signal. Ratios are averaged on the log scale",
+                       "(geometric mean) with delta-method standard errors. %s"), n_null, pa, common_caption),
   nonnull = sprintf(paste("Non-null GWAS (sparse causal effects shared across ancestries, %d replicates). Top-10%% overlap is the",
                           "share of target individuals in a method's top score decile who are also in %s-only PRS-CS's top decile;",
                           "correlation is between their scores. <i>r</i><sup>2</sup> is the squared correlation between scores and",
                           "true genetic values. %s"), n_nonnull, pa, common_caption),
-  seed_contrast = sprintf(paste("Replicate-paired differences, each method minus the %s-only seed rerun, with the standard error of the",
-                                "paired difference in parentheses. Every quantity is first measured against %s-only PRS-CS, as in",
-                                "Tables 1 and 2, so the differences show how far a method moves scores beyond what a new sampler seed",
-                                "alone does. Negative overlap and correlation differences mean larger changes than run-to-run variation;",
-                                "pp, percentage points. <sup>*</sup>Generating weight."), pa, pa),
+  seed_contrast = sprintf(paste("Replicate-paired comparisons of each method with the %s-only seed rerun, with standard errors in parentheses.",
+                                "Null score variance is the method's variance relative to the seed rerun's, as a percentage change",
+                                "(geometric mean over replicates; negative means less noise than a reseeded %s-only run). Top-10%% overlap",
+                                "and correlation are first measured against %s-only PRS-CS, as in Table 2, and the columns give the method",
+                                "minus the seed rerun; negative values mean a method moves scores further than a new sampler seed alone",
+                                "does. pp, percentage points. <sup>*</sup>Generating weight."), pa, pa, pa),
   settings = "Simulation and analysis settings for this study.")
 titles <- c(null = "Table 1. Null GWAS simulation", nonnull = "Table 2. Non-null GWAS simulation",
             seed_contrast = "Table 3. Replicate-paired differences against the seed rerun", settings = "Table 4. Simulation settings")
@@ -361,14 +375,14 @@ settings <- list(
   mixing_weights = seq(0, 1, by = 0.1), phi_mode = phi_mode,
   replicates = list(null = n_null, nonnull = n_nonnull),
   seed_control = "single-panel arm rerun with sampler seed 2000 + rep (main runs use 1000 + rep)",
-  uncertainty = "mean over replicates with Monte Carlo SE (SD / sqrt(n)); paired differences use the SE of the per-replicate difference",
+  uncertainty = "mean over replicates with Monte Carlo SE (SD / sqrt(n)); paired differences use the SE of the per-replicate difference; variance ratios use the log scale with delta-method SE",
   metric_definitions = list(
     ld_fit_excess = "Gaussian LD-fit loss (ridge delta 0.001) of the method's LD matrix to the generating covariance of the null z-scores, minus the loss at the generating weight, per replicate",
-    null_var_pct = sprintf("100 * (variance of target scores / variance under %s-only PRS-CS - 1), null GWAS, per replicate", pa),
+    null_var_pct = sprintf("100 * (exp(mean over replicates of log(variance of target scores / variance under %s-only PRS-CS)) - 1), null GWAS; delta-method SE", pa),
     top10_pct = sprintf("share of target individuals in the method's top score decile also in %s-only PRS-CS's top decile, non-null GWAS", pa),
     cor = sprintf("correlation of target scores with %s-only PRS-CS scores, non-null GWAS", pa),
     r2 = "squared correlation between target scores and true genetic values, non-null GWAS",
-    seed_contrast = sprintf("per-replicate difference between the method and the %s-only seed rerun in null_var_pct, top10_pct (percentage points) and cor (x1000)", pa)))
+    seed_contrast = sprintf("null score variance of the method relative to the %s-only seed rerun (geometric mean percentage change); per-replicate difference between the method and the seed rerun in top10_pct (percentage points) and cor (x1000)", pa)))
 manifest <- list(
   study = basename(normalizePath(out_dir)), program = program,
   command = paste("Rscript", program, paste(shQuote(args), collapse = " ")),
