@@ -243,8 +243,15 @@ t_or <- html_table(list(list("PRS-MIX at w<sub>0</sub>", 1), list("Best weight (
                      c(sprintf("%s (%s)", num(a$mean, 3), num(a$se, 3)), sprintf("%.1f", b$w), sprintf("%s (%s)", num(b$mean, 3), num(b$se, 3)),
                        if (c2$w == 1) s$A else s$B, sprintf("%s (%s)", num(c2$mean, 3), num(c2$se, 3)))
                    })
-common <- paste("Exploratory analysis, not curated paper evidence. Chromosome 22, fixed 250 kb LD blocks, PRS-CS with automatic &phi; and default sampler settings; replicates 1&ndash;", max_rep,
-                " per setting. w<sub>0</sub> is the generating weight on the first-listed ancestry; PRS-MIX at w = 1 and 0 is",
+nrep_of <- vapply(settings, function(s) {
+  r <- cells[cells$analysis == "curve" & cells$pair == s$pair & cells$mix == s$mix & cells$column == "r2", "n"]
+  as.integer(max(r))
+}, integer(1))
+nrep_note <- paste(vapply(sort(unique(nrep_of), decreasing = TRUE), function(k) {
+  sprintf("%d for %s", k, paste(vapply(settings[nrep_of == k], function(s) paste(s$pair, s$mix), ""), collapse = ", "))
+}, ""), collapse = "; ")
+common <- paste("Exploratory analysis, not curated paper evidence. Chromosome 22, fixed 250 kb LD blocks, PRS-CS with automatic &phi; and default sampler settings. Replicates per setting (the first ", max_rep,
+                " available): ", nrep_note, ". w<sub>0</sub> is the generating weight on the first-listed ancestry; PRS-MIX at w = 1 and 0 is",
                 " first- and second-ancestry PRS-CS. Square brackets are pointwise 95% t intervals over replicates, paired within",
                 " replicate; they are exploratory and not adjusted for the number of settings and weights.", sep = "")
 sec <- function(title, caption, body) c("<section>", sprintf("<h2>%s</h2>", title), sprintf("<p class=\"cap\">%s</p>", caption), body, "</section>")
@@ -288,7 +295,7 @@ html <- c(
   sec("Figure 2. Mean squared error across weights",
       paste0("Geometric-mean percentage change in MSE against the true genetic value relative to PRS-MIX at the generating weight, with pointwise 95% intervals; negative is better; grey band &plusmn;", 100 * tol, "%. Free y-axis per row."),
       img("mse", "MSE relative to the generating weight across PRS-MIX weights, by setting")),
-  sprintf("<footer>Generated from <code>%s</code> by <code>inst/scripts/null_sim/14_weight_sensitivity.R</code> (replicates 1&ndash;%d, tol = %g) at PRS-MIX %s. Every number is in <code>weight_sensitivity.tsv</code>.</footer>",
+  sprintf("<footer>Generated from <code>%s</code> by <code>inst/scripts/null_sim/14_weight_sensitivity.R</code> (at most %d replicates per setting, tol = %g) at PRS-MIX %s. Every number is in <code>weight_sensitivity.tsv</code>.</footer>",
           root, max_rep, tol, substr(system2("git", c("rev-parse", "HEAD"), stdout = TRUE), 1, 7)),
   "</main>", "</body>", "</html>")
 writeLines(html, file.path(out_dir, "weight_sensitivity.html"))
