@@ -1,0 +1,160 @@
+{
+  "study": "paper_tables",
+  "program": "inst/scripts/null_sim/18_sweep_paper_tables.R",
+  "command": "Rscript inst/scripts/null_sim/18_sweep_paper_tables.R 'inst/scripts/results/sim250_sweep_100rep' 'inst/scripts/results/sim250_sweep_20rep/paper_tables' '20'",
+  "asset_commit": "37acbeb66566f9a351b7420e76e6972ae9badf54",
+  "program_uncommitted": false,
+  "inputs_uncommitted": false,
+  "experiment_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+  "r_version": "R version 4.6.1 (2026-06-24)",
+  "inputs": [
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_asn_w0.9_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.9/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "8947f720a082b4e85bb71af4316ee962449ba8c8996510a877c496d0e9150ac9"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_asn_w0.7_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.7/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "ff24f80de08212929146b3e79842d17b0b7287745d0ff8baa1b8eb3dd217c531"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_asn_w0.5_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.5/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "ae294de9b33feafab4cfa71f7e24bbe5ad62afe5f48d77947e375c00406c51a1"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_afr_w0.9_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.9/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "d712c19d0ba2e0dd5bd647e20f7e2e90af60705e7e84813736721f201243adfe"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_afr_w0.7_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.7/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "4e1104ebaa1d01f3cd491abdbb884580951e6f129bbc458d3dae9632be2164fe"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_afr_w0.5_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.5/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "6d6bc9afec5def16ab49efad3defd8d0f41d047bd8fa316f92ccd4b27f87347b"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_sas_w0.9_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.9/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "cd8d057db9ee6b20ae8ff6f1e71e1ce5a05f653303dc88d797e5a16b43b5c1e9"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_sas_w0.7_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.7/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "283e4292e2d91604fd222995d38db69383bf2ad0600a6ae06fadb255b9db0b24"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_sas_w0.5_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.5/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "693de20f38db8459437bf1b3fcdb1b169b80262d43f841a63a812950c2b693ed"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/asn_afr_w0.9_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/asn_afr/w0.9/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "b995510b631b107b8205dfb81dc0fe57f7cd98382604293b2f5d5ecf952913c7"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/asn_afr_w0.7_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/asn_afr/w0.7/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "137f3e036c30c93ab51640dbca52d74233301df88d1ec16d95ba568fd7acd192"
+    },
+    {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/asn_afr_w0.5_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/asn_afr/w0.5/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "ff82440dcb82d856918814db57d5c5a7881e45522638176007c0939ce6370765"
+    }
+  ],
+  "outputs": {
+    "table_sweep_accuracy": {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/table_sweep_accuracy.tex",
+      "sha256": "fefef86917296d0d4456182b4b511a545c619f53ed9c80525ec96ace6af231e7"
+    },
+    "table_sweep_overlap": {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/table_sweep_overlap.tex",
+      "sha256": "a40f09fedd90172984c032fb89a7cc56a746191f28136827a47423700dee71b4"
+    },
+    "table_sweep_cutoffs": {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/table_sweep_cutoffs.tex",
+      "sha256": "ec1616e7215fb2420d76de097a7946689a4d263d8d0254f40097b742ce33a376"
+    },
+    "table_sweep_settings": {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/table_sweep_settings.tex",
+      "sha256": "187757f65da49cbedf038db1f3ea7b04241275f821e430a19b61799506e59155"
+    },
+    "tables_tsv": {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/tables.tsv",
+      "sha256": "a46bc5cc278b46a1869613a5f14b03be5481e6a7ca1982fd3eee0ba1077949de"
+    },
+    "tables_html": {
+      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/tables.html",
+      "sha256": "c59511b9393a4d7781bf097fbc41dc297d620d3212ca7d7e807ff9e4ebbb94cd"
+    }
+  },
+  "settings": {
+    "chromosome": 22,
+    "block_layout": "fixed 250 kb",
+    "pairs": [
+      [
+        "EUR",
+        "ASN"
+      ],
+      [
+        "EUR",
+        "AFR"
+      ],
+      [
+        "EUR",
+        "SAS"
+      ],
+      [
+        "ASN",
+        "AFR"
+      ]
+    ],
+    "compositions_A": [0.9, 0.7, 0.5],
+    "replicates_used": {
+      "EUR + ASN, 90:10": 20,
+      "EUR + ASN, 70:30": 20,
+      "EUR + ASN, 50:50": 20,
+      "EUR + AFR, 90:10": 20,
+      "EUR + AFR, 70:30": 20,
+      "EUR + AFR, 50:50": 20,
+      "EUR + SAS, 90:10": 20,
+      "EUR + SAS, 70:30": 20,
+      "EUR + SAS, 50:50": 20,
+      "ASN + AFR, 90:10": 20,
+      "ASN + AFR, 70:30": 20,
+      "ASN + AFR, 50:50": 20
+    },
+    "replicate_filter": "20",
+    "phi_mode": "auto",
+    "prs_mix_weight": "generating composition (share of panel A's ancestry)",
+    "seed_control": "single-panel arm rerun with sampler seed 2000 + rep (main runs use 1000 + rep)",
+    "uncertainty": "mean over replicates with Monte Carlo SE (SD / sqrt(n)); paired differences use the SE of the per-replicate difference",
+    "metric_definitions": {
+      "r2": "squared correlation between target scores and true genetic values, non-null GWAS",
+      "mse_pct": "100 * (exp(mean over replicates of log(mse_gv of PRS-MIX / mse_gv of the single panel)) - 1); mse_gv = mean of ((s - mean s) - (g - mean g))^2 (07_metrics_nonnull.R); delta-method SE",
+      "overlap": "share of target individuals in PRS-MIX's top score fraction also in the single panel's top fraction (top05/top10/top20 columns of 07_metrics_nonnull.R)",
+      "seed_baseline": "the same overlap between the single panel's seed rerun and the single panel",
+      "difference": "per-replicate PRS-MIX overlap minus seed-rerun overlap, percentage points"
+    }
+  },
+  "notes": "Replicates missing any of the five arms used are dropped from that setting; n per cell is in tables.tsv. Experiment runs were made on RedHawk with the null-simulation job scripts (cluster/jobs/null_sim, not version-controlled)."
+}
