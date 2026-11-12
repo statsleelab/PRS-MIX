@@ -1,81 +1,82 @@
 {
-  "study": "paper_tables",
+  "study": "sim250_sweep_250kb_20rep_provisional",
   "program": "inst/scripts/null_sim/18_sweep_paper_tables.R",
-  "command": "Rscript inst/scripts/null_sim/18_sweep_paper_tables.R 'inst/scripts/results/sim250_sweep_100rep' 'inst/scripts/results/sim250_sweep_20rep/paper_tables' '20'",
-  "asset_commit": "37acbeb66566f9a351b7420e76e6972ae9badf54",
+  "command": "Rscript inst/scripts/null_sim/18_sweep_paper_tables.R 'inst/scripts/results/sim250_sweep_100rep' 'paper/sim250_sweep_250kb_20rep_provisional' '20' 'auto' 'yes'",
+  "asset_commit": "f6dc1423b9306e5923f6f1dc8f54a0079e073894",
   "program_uncommitted": false,
   "inputs_uncommitted": false,
+  "provisional": true,
   "experiment_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
   "r_version": "R version 4.6.1 (2026-06-24)",
   "inputs": [
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_asn_w0.9_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_asn_w0.9_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.9/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "8947f720a082b4e85bb71af4316ee962449ba8c8996510a877c496d0e9150ac9"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_asn_w0.7_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_asn_w0.7_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.7/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "ff24f80de08212929146b3e79842d17b0b7287745d0ff8baa1b8eb3dd217c531"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_asn_w0.5_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_asn_w0.5_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.5/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "ae294de9b33feafab4cfa71f7e24bbe5ad62afe5f48d77947e375c00406c51a1"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_afr_w0.9_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_afr_w0.9_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.9/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "d712c19d0ba2e0dd5bd647e20f7e2e90af60705e7e84813736721f201243adfe"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_afr_w0.7_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_afr_w0.7_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.7/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "4e1104ebaa1d01f3cd491abdbb884580951e6f129bbc458d3dae9632be2164fe"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_afr_w0.5_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_afr_w0.5_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.5/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "6d6bc9afec5def16ab49efad3defd8d0f41d047bd8fa316f92ccd4b27f87347b"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_sas_w0.9_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_sas_w0.9_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.9/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "cd8d057db9ee6b20ae8ff6f1e71e1ce5a05f653303dc88d797e5a16b43b5c1e9"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_sas_w0.7_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_sas_w0.7_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.7/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "283e4292e2d91604fd222995d38db69383bf2ad0600a6ae06fadb255b9db0b24"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/eur_sas_w0.5_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/eur_sas_w0.5_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.5/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "693de20f38db8459437bf1b3fcdb1b169b80262d43f841a63a812950c2b693ed"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/asn_afr_w0.9_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/asn_afr_w0.9_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/asn_afr/w0.9/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "b995510b631b107b8205dfb81dc0fe57f7cd98382604293b2f5d5ecf952913c7"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/asn_afr_w0.7_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/asn_afr_w0.7_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/asn_afr/w0.7/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "137f3e036c30c93ab51640dbca52d74233301df88d1ec16d95ba568fd7acd192"
     },
     {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/inputs/asn_afr_w0.5_nonnull_metrics.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/inputs/asn_afr_w0.5_nonnull_metrics.tsv",
       "source": "inst/scripts/results/sim250_sweep_100rep/asn_afr/w0.5/metrics/nonnull_metrics.tsv",
       "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
       "sha256": "ff82440dcb82d856918814db57d5c5a7881e45522638176007c0939ce6370765"
@@ -83,28 +84,28 @@
   ],
   "outputs": {
     "table_sweep_accuracy": {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/table_sweep_accuracy.tex",
-      "sha256": "fefef86917296d0d4456182b4b511a545c619f53ed9c80525ec96ace6af231e7"
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/table_sweep_accuracy.tex",
+      "sha256": "b1621bb00216539454f732e5ad2c06d63e34a32f071cc84b00669131bbdb3de5"
     },
     "table_sweep_overlap": {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/table_sweep_overlap.tex",
-      "sha256": "a40f09fedd90172984c032fb89a7cc56a746191f28136827a47423700dee71b4"
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/table_sweep_overlap.tex",
+      "sha256": "dfc10c20e931b2570abe592e16bf5eadc4d552599dd8528da4b9a6d42ae0e68d"
     },
     "table_sweep_cutoffs": {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/table_sweep_cutoffs.tex",
-      "sha256": "ec1616e7215fb2420d76de097a7946689a4d263d8d0254f40097b742ce33a376"
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/table_sweep_cutoffs.tex",
+      "sha256": "904b4758af769ab04917db2f656de44fb6f4a1051c8bc463cef9b04ec1bb8243"
     },
     "table_sweep_settings": {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/table_sweep_settings.tex",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/table_sweep_settings.tex",
       "sha256": "187757f65da49cbedf038db1f3ea7b04241275f821e430a19b61799506e59155"
     },
     "tables_tsv": {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/tables.tsv",
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/tables.tsv",
       "sha256": "a46bc5cc278b46a1869613a5f14b03be5481e6a7ca1982fd3eee0ba1077949de"
     },
     "tables_html": {
-      "path": "inst/scripts/results/sim250_sweep_20rep/paper_tables/tables.html",
-      "sha256": "c59511b9393a4d7781bf097fbc41dc297d620d3212ca7d7e807ff9e4ebbb94cd"
+      "path": "paper/sim250_sweep_250kb_20rep_provisional/tables.html",
+      "sha256": "59814a169f7468a3018a7ad7db455a9c5ca3b316094b476ad7d124df3c2bee30"
     }
   },
   "settings": {
