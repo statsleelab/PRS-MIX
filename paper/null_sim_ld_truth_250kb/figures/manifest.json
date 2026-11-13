@@ -1,0 +1,113 @@
+{
+  "study": "figures",
+  "program": "inst/scripts/null_sim/21_ld_truth_figures.R",
+  "command": "Rscript inst/scripts/null_sim/21_ld_truth_figures.R 'inst/scripts/results/null_sim_ld_truth/block75/inputs' 'paper/null_sim_ld_truth_250kb/figures' '75' 'eur_asn,eur_afr,eur_sas' 'no'",
+  "asset_commit": "1365ba94f7d2a1aeaaef34d4d5096ead21dd3f73",
+  "program_uncommitted": false,
+  "inputs_uncommitted": false,
+  "experiment_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+  "r_version": "R version 4.6.1 (2026-06-24)",
+  "ggplot2_version": "4.0.3",
+  "inputs": [
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_asn_block75_ld.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_asn_block75_ld.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "7932d96dd16fe354d7f55c50823055a344de4932ccb215886f68d65c78908dc5"
+    },
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_asn_block_scan.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_asn_block_scan.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "bcc0ec3e6b9ceaac4014fa58005064ded08dc42bf7eedd0eb008ad00a3ecf125"
+    },
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_asn_params.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_asn_params.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "258c8a2f75dacc59bddcc17e788a1b222f2fb2877095a4bd7da3225b4a53d42a"
+    },
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_afr_block75_ld.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_afr_block75_ld.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "531803b56a8af986a5562a7ff90e4e6f01b2805de429d2efeee9153debd2df66"
+    },
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_afr_block_scan.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_afr_block_scan.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "30c653716ebd7a7b5b2769deed702b347f3b83baca28ee3b9528152984221388"
+    },
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_afr_params.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_afr_params.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "22780f6de0987cd5f4c854f16ca60c0c86efe8f4c85bce0d3cbbfabbad3dedef"
+    },
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_sas_block75_ld.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_sas_block75_ld.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "b499c22fbf0db22538718083b187c582fb1e1c07381cc6c46682d7a94161d41d"
+    },
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_sas_block_scan.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_sas_block_scan.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "2777042d24aaee8adc1c125c55d042caa10f06d308f05ae84e477a6e545ebcc5"
+    },
+    {
+      "path": "paper/null_sim_ld_truth_250kb/figures/inputs/eur_sas_params.tsv",
+      "source": "inst/scripts/results/null_sim_ld_truth/block75/inputs/eur_sas_params.tsv",
+      "source_commit": "306d596b1a84474b7a55cd04017e19ebd5a89638",
+      "sha256": "43af97c1ca1b86f08b18c693c04135360e96e6ebdd53dfe20c54601660c24102"
+    }
+  ],
+  "outputs": {
+    "figure_data": {
+      "path": "paper/null_sim_ld_truth_250kb/figures/figure_data.tsv.gz",
+      "sha256": "40f2efd0048300dfd5eb15402f6e443d70cac177a3ecd31cc102f008b05610ac"
+    },
+    "block_summary": {
+      "path": "paper/null_sim_ld_truth_250kb/figures/block_summary.tsv",
+      "sha256": "d60c67984b2268ec760f7435e8c3b204caf3574ffd2de2edf4ee603f60d1bedc"
+    },
+    "eur_asn_png": {
+      "path": "paper/null_sim_ld_truth_250kb/figures/fig_ld_truth_eur_asn_block75.png",
+      "sha256": "f24ae808c0da921dc85fc38c69e2442a3fbeb6291f66b7a8d215ac3e8a955fa3"
+    },
+    "eur_asn_pdf": {
+      "path": "paper/null_sim_ld_truth_250kb/figures/fig_ld_truth_eur_asn_block75.pdf",
+      "sha256": "d5ef0d3255ad4a6bd85603d921e92ab386b1d39ff5fdaec8ed928c77d2562a1f"
+    },
+    "eur_afr_png": {
+      "path": "paper/null_sim_ld_truth_250kb/figures/fig_ld_truth_eur_afr_block75.png",
+      "sha256": "43da91ae6cd4a03bf71242ce9a7463c6282bd28c5d8aec5a842d7cf21684eba5"
+    },
+    "eur_afr_pdf": {
+      "path": "paper/null_sim_ld_truth_250kb/figures/fig_ld_truth_eur_afr_block75.pdf",
+      "sha256": "6072f6cfce6cd40c0140a4f9e00ed71eb0e54e514cd0a5284afaa4d121b59d03"
+    },
+    "eur_sas_png": {
+      "path": "paper/null_sim_ld_truth_250kb/figures/fig_ld_truth_eur_sas_block75.png",
+      "sha256": "147f7f71714819020464502e3000019bbdf98dc00a2b0251d5c35b2776de1e64"
+    },
+    "eur_sas_pdf": {
+      "path": "paper/null_sim_ld_truth_250kb/figures/fig_ld_truth_eur_sas_block75.pdf",
+      "sha256": "81ca356e6933ce1bfc002250d1d7b919ecacb7812d588589cf2bb0f3c0004085"
+    }
+  },
+  "settings": {
+    "chromosome": 22,
+    "block_layout": "fixed 250 kb",
+    "block": 75,
+    "pairs": ["eur_asn", "eur_afr", "eur_sas"],
+    "compositions_A": [0.9, 0.7, 0.5],
+    "footnote": false,
+    "true_ld": "w R_A,disc + (1 - w) R_B,disc, R_k,disc = Z_k'Z_k / n_k on the discovery individuals (04_simulate_null.R)",
+    "prs_mix": "w R_A,panel + (1 - w) R_B,panel from the reference-set panels",
+    "summary": "mean |true - candidate| over off-diagonal SNP pairs of the block"
+  },
+  "notes": "Inputs were written on RedHawk by 20_ld_truth_extract.R from the sim250 null-simulation directories (<pair>/w0.7: split, panels and discovery genotypes shared by every composition of the pair)."
+}
