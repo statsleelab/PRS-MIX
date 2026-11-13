@@ -12,7 +12,8 @@
 #     r2_<POP>       cor(s, g)^2, recovery of genetic value (not phenotype R^2)
 #     mse_gv_<POP>   mean of ((s - mean s) - (g - mean g))^2, scale as well as order
 #     vs single_EUR and single_ASN: cor_<REF>_<POP>, varratio_<REF>_<POP>,
-#     top10_<REF>_<POP> (overlap of the top score decile)
+#     top10_<REF>_<POP> (overlap of the top score decile), top05_ and top20_
+#     (top 5% and 20%), spear_<REF>_<POP> (Spearman rank correlation)
 #   phi            posterior global shrinkage estimate (auto runs only)
 #
 # Usage:
@@ -43,8 +44,8 @@ disc <- lapply(stats::setNames(pops, pops), function(p) ns_load_standardized(gen
 targets <- lapply(stats::setNames(pops, pops), function(p) ns_load_standardized(geno_dir, p, "target"))
 
 rmix_norm2 <- function(b) sum(vapply(pops, function(p) w[[p]] * sum(as.vector(disc[[p]] %*% b)^2) / nrow(disc[[p]]), numeric(1)))
-top_overlap <- function(a, b) {
-  k <- ceiling(length(a) / 10)
+top_overlap <- function(a, b, frac = 0.1) {
+  k <- ceiling(round(length(a) * frac, 6))
   length(intersect(order(-a)[seq_len(k)], order(-b)[seq_len(k)])) / k
 }
 
@@ -84,6 +85,9 @@ for (phi_dir in list.dirs(file.path(sim_dir, "prscs_nonnull"), recursive = FALSE
           row[[paste0("cor_", tag)]] <- if (is.null(r_s)) NA_real_ else stats::cor(s, r_s)
           row[[paste0("varratio_", tag)]] <- if (is.null(r_s)) NA_real_ else stats::var(s) / stats::var(r_s)
           row[[paste0("top10_", tag)]] <- if (is.null(r_s)) NA_real_ else top_overlap(s, r_s)
+          row[[paste0("top05_", tag)]] <- if (is.null(r_s)) NA_real_ else top_overlap(s, r_s, 0.05)
+          row[[paste0("top20_", tag)]] <- if (is.null(r_s)) NA_real_ else top_overlap(s, r_s, 0.2)
+          row[[paste0("spear_", tag)]] <- if (is.null(r_s)) NA_real_ else stats::cor(s, r_s, method = "spearman")
         }
       }
       met[[length(met) + 1]] <- row
