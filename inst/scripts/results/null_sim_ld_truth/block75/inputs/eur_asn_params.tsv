@@ -1,0 +1,8 @@
+param	value
+sim_dir	/shared/leed13_shared/grace/make_ld/outputs/sim250/eur_asn/w0.7
+pops	EUR,ASN
+layout	fixed250kb
+chr	22
+blocks	75
+n_discovery_EUR	5070
+n_discovery_ASN	2701
