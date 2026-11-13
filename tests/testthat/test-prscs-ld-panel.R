@@ -749,3 +749,56 @@ test_that("fixed tiles and custom blocks retain the same SNPs", {
   expect_identical(read_info(fixed$EUR), read_info(custom$EUR))
   expect_equal(read_info(fixed$EUR)$SNP, c("rs1", "rs3", "rs6"))
 })
+
+test_that("generate_prscs_ld_panels passes sample_keep to the LD engine and records it", {
+  skip_if_not_installed("hdf5r")
+
+  td <- tempfile("gausstest"); dir.create(td)
+  idx_path <- file.path(td, "toy_index.gz")
+  geno_path <- file.path(td, "toy_geno.gz")
+  pop_desc_path <- file.path(td, "toy_pop_desc.txt")
+  output_dir <- file.path(td, "prscs_ref")
+  dir.create(output_dir)
+  .write_toy_index(idx_path)
+  .write_dummy_file(geno_path)
+  .write_toy_pop_desc(pop_desc_path)
+
+  seen <- list()
+  testthat::local_mocked_bindings(
+    computeSuperPopLDWindow = function(..., sample_keep = NULL) {
+      seen[[length(seen) + 1]] <<- sample_keep
+      .mock_compute_superpop_ld_window(...)
+    }
+  )
+
+  keep <- list(P2 = c(4, 1, 2), P1 = c(3, 5))
+  panel_dirs <- generate_prscs_ld_panels(
+    reference_index_file = idx_path,
+    reference_data_file = geno_path,
+    reference_pop_desc_file = pop_desc_path,
+    superpopulation_labels = c("EUR", "AFR"),
+    output_dir = output_dir,
+    chromosomes = 1,
+    block_size = 100,
+    verbose = FALSE,
+    sample_keep = keep
+  )
+
+  expect_gt(length(seen), 0)
+  for (s in seen) expect_identical(s, list(P2 = c(1L, 2L, 4L), P1 = c(3L, 5L)))
+
+  h5 <- hdf5r::H5File$new(file.path(panel_dirs$EUR, "ldblk_1kg_chr1.hdf5"), mode = "r")
+  on.exit(h5$close_all(), add = TRUE)
+  expect_true(h5$attr_open("sample_keep")$read())
+  expect_true(nzchar(h5$attr_open("sample_keep_md5")$read()))
+
+  expect_error(
+    generate_prscs_ld_panels(
+      reference_index_file = idx_path, reference_data_file = geno_path,
+      reference_pop_desc_file = pop_desc_path, superpopulation_labels = c("EUR", "AFR"),
+      output_dir = output_dir, chromosomes = 1, block_size = 100, verbose = FALSE,
+      sample_keep = list(1:3)
+    ),
+    "named by population"
+  )
+})
