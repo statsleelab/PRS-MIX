@@ -1,0 +1,203 @@
+table	setting	arm	column	n	mean	se	note	scale
+null	EUR + ASN, 70:30	single_EUR	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	single_EUR	ld_fit_excess	100	1.24133138648039	0.00947119327817456		mean
+null	EUR + ASN, 70:30	single_EUR	null_var_pct_EUR	0	NA	NA	0 (ref.)	mean
+null	EUR + ASN, 70:30	single_EUR	null_var_pct_ASN	0	NA	NA	0 (ref.)	mean
+nonnull	EUR + ASN, 70:30	single_EUR	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	single_EUR	top10_pct_EUR	0	NA	NA	100 (ref.)	mean
+nonnull	EUR + ASN, 70:30	single_EUR	cor_EUR	0	NA	NA	1 (ref.)	mean
+nonnull	EUR + ASN, 70:30	single_EUR	top10_pct_ASN	0	NA	NA	100 (ref.)	mean
+nonnull	EUR + ASN, 70:30	single_EUR	cor_ASN	0	NA	NA	1 (ref.)	mean
+nonnull	EUR + ASN, 70:30	single_EUR	r2_EUR	100	0.590865819706	0.00468385255174002		mean
+nonnull	EUR + ASN, 70:30	single_EUR	r2_ASN	100	0.58209717762714	0.00497617620068343		mean
+null	EUR + ASN, 70:30	single_EUR_seed2	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	single_EUR_seed2	ld_fit_excess	0	NA	NA	n/a	mean
+null	EUR + ASN, 70:30	single_EUR_seed2	null_var_pct_EUR	100	0.477279883111392	1.58051269949379		log_pct
+null	EUR + ASN, 70:30	single_EUR_seed2	null_var_pct_ASN	100	0.588015132235253	1.63719460168436		log_pct
+nonnull	EUR + ASN, 70:30	single_EUR_seed2	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	single_EUR_seed2	top10_pct_EUR	100	91.353057199211	0.15392633618725		mean
+nonnull	EUR + ASN, 70:30	single_EUR_seed2	cor_EUR	100	0.992515294635555	0.000218905603711244		mean
+nonnull	EUR + ASN, 70:30	single_EUR_seed2	top10_pct_ASN	100	90.7148148148148	0.194152864236455		mean
+nonnull	EUR + ASN, 70:30	single_EUR_seed2	cor_ASN	100	0.991161366648721	0.000260757345554211		mean
+nonnull	EUR + ASN, 70:30	single_EUR_seed2	r2_EUR	100	0.591579515508199	0.00471575619273307		mean
+nonnull	EUR + ASN, 70:30	single_EUR_seed2	r2_ASN	100	0.582623069786511	0.00502593868677778		mean
+null	EUR + ASN, 70:30	mix_w0.9	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.9	ld_fit_excess	100	0.0782404875673459	0.00094372355657422		mean
+null	EUR + ASN, 70:30	mix_w0.9	null_var_pct_EUR	100	0.381579589305825	1.24343703491446		log_pct
+null	EUR + ASN, 70:30	mix_w0.9	null_var_pct_ASN	100	-0.0358415137832413	1.29933228562712		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.9	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.9	top10_pct_EUR	100	91.112426035503	0.169990881465563		mean
+nonnull	EUR + ASN, 70:30	mix_w0.9	cor_EUR	100	0.992121537887061	0.000247850671901663		mean
+nonnull	EUR + ASN, 70:30	mix_w0.9	top10_pct_ASN	100	90.2592592592593	0.191367075561634		mean
+nonnull	EUR + ASN, 70:30	mix_w0.9	cor_ASN	100	0.990483286796337	0.000279455437118557		mean
+nonnull	EUR + ASN, 70:30	mix_w0.9	r2_EUR	100	0.59144710882123	0.00475799407940162		mean
+nonnull	EUR + ASN, 70:30	mix_w0.9	r2_ASN	100	0.582680036561978	0.004906986209389		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.9	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.9	d_null_var_EUR	100	-0.0952457052150524	1.74496142444385		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.9	d_null_var_ASN	100	-0.62020971901906	1.73176974141754		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.9	d_top10_EUR	100	-0.240631163708086	0.112890820838162		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.9	d_top10_ASN	100	-0.455555555555563	0.132220383089946		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.9	d_cor_x1000_EUR	100	-0.393756748494012	0.0982456971259291		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.9	d_cor_x1000_ASN	100	-0.678079852383647	0.124413236520726		mean
+null	EUR + ASN, 70:30	mix_w0.8	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.8	ld_fit_excess	100	0.0074382513944512	0.000309925899520033		mean
+null	EUR + ASN, 70:30	mix_w0.8	null_var_pct_EUR	100	-1.0201432397997	1.26060473773948		log_pct
+null	EUR + ASN, 70:30	mix_w0.8	null_var_pct_ASN	100	-2.4917072019003	1.2546492949261		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.8	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.8	top10_pct_EUR	100	91.0414201183432	0.198473610794078		mean
+nonnull	EUR + ASN, 70:30	mix_w0.8	cor_EUR	100	0.991909810634798	0.000246834202152031		mean
+nonnull	EUR + ASN, 70:30	mix_w0.8	top10_pct_ASN	100	90.0185185185185	0.194944842730439		mean
+nonnull	EUR + ASN, 70:30	mix_w0.8	cor_ASN	100	0.990018942001676	0.000276645052722852		mean
+nonnull	EUR + ASN, 70:30	mix_w0.8	r2_EUR	100	0.591666744193226	0.0048854588538148		mean
+nonnull	EUR + ASN, 70:30	mix_w0.8	r2_ASN	100	0.582825231449594	0.00498089614640874		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.8	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.8	d_null_var_EUR	100	-1.49031017226292	1.6564263032382		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.8	d_null_var_ASN	100	-3.06171896332467	1.68430693848144		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.8	d_top10_EUR	100	-0.311637080867852	0.119768412133788		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.8	d_top10_ASN	100	-0.696296296296299	0.144001065367038		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.8	d_cor_x1000_EUR	100	-0.605484000756782	0.10699439630987		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.8	d_cor_x1000_ASN	100	-1.14242464704466	0.128830102527481		mean
+null	EUR + ASN, 70:30	mix_w0.7	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.7	ld_fit_excess	100	0	0		mean
+null	EUR + ASN, 70:30	mix_w0.7	null_var_pct_EUR	100	-1.37185482956524	1.25137798591913		log_pct
+null	EUR + ASN, 70:30	mix_w0.7	null_var_pct_ASN	100	-3.88178587899798	1.26006295984014		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.7	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.7	top10_pct_EUR	100	90.6390532544379	0.177667913338184		mean
+nonnull	EUR + ASN, 70:30	mix_w0.7	cor_EUR	100	0.991226195748896	0.000251651881672925		mean
+nonnull	EUR + ASN, 70:30	mix_w0.7	top10_pct_ASN	100	89.4148148148148	0.185460326840397		mean
+nonnull	EUR + ASN, 70:30	mix_w0.7	cor_ASN	100	0.989049288206821	0.00030985189289501		mean
+nonnull	EUR + ASN, 70:30	mix_w0.7	r2_EUR	100	0.591157214021142	0.00486095899546487		mean
+nonnull	EUR + ASN, 70:30	mix_w0.7	r2_ASN	100	0.581668894551814	0.00494086621699049		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.7	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.7	d_null_var_EUR	100	-1.84035108715901	1.52410635120181		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.7	d_null_var_ASN	100	-4.44367155009185	1.47327398672875		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.7	d_top10_EUR	100	-0.71400394477317	0.112024234103354		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.7	d_top10_ASN	100	-1.3	0.173758579344294		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.7	d_cor_x1000_EUR	100	-1.28909888665892	0.101643868283722		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.7	d_cor_x1000_ASN	100	-2.11207844189973	0.203278702384721		mean
+null	EUR + ASN, 70:30	mix_w0.6	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.6	ld_fit_excess	100	0.013697074966371	0.000205688764870815		mean
+null	EUR + ASN, 70:30	mix_w0.6	null_var_pct_EUR	100	-1.02170121472712	1.34969968664929		log_pct
+null	EUR + ASN, 70:30	mix_w0.6	null_var_pct_ASN	100	-4.17553108728603	1.31818836544266		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.6	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.6	top10_pct_EUR	100	90.1301775147929	0.177391226692384		mean
+nonnull	EUR + ASN, 70:30	mix_w0.6	cor_EUR	100	0.9903890434117	0.000256980969549372		mean
+nonnull	EUR + ASN, 70:30	mix_w0.6	top10_pct_ASN	100	89.037037037037	0.196687312168841		mean
+nonnull	EUR + ASN, 70:30	mix_w0.6	cor_ASN	100	0.987818540272715	0.000321388635376001		mean
+nonnull	EUR + ASN, 70:30	mix_w0.6	r2_EUR	100	0.590732141426833	0.00493895021370206		mean
+nonnull	EUR + ASN, 70:30	mix_w0.6	r2_ASN	100	0.580792408988035	0.00503597329816033		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.6	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.6	d_null_var_EUR	100	-1.49186074661091	1.70481929294832		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.6	d_null_var_ASN	100	-4.73569958931888	1.67211533020175		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.6	d_top10_EUR	100	-1.22287968441815	0.114632450849196		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.6	d_top10_ASN	100	-1.67777777777777	0.177853752938831		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.6	d_cor_x1000_EUR	100	-2.12625122385505	0.122027101928842		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.6	d_cor_x1000_ASN	100	-3.34282637600584	0.218847038028377		mean
+null	EUR + ASN, 70:30	mix_w0.5	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.5	ld_fit_excess	100	0.0397396661904334	0.000377318913398016		mean
+null	EUR + ASN, 70:30	mix_w0.5	null_var_pct_EUR	100	0.967426771016355	1.39446165964205		log_pct
+null	EUR + ASN, 70:30	mix_w0.5	null_var_pct_ASN	100	-2.1641170166806	1.34377500288423		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.5	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.5	top10_pct_EUR	100	89.4437869822485	0.185799412991009		mean
+nonnull	EUR + ASN, 70:30	mix_w0.5	cor_EUR	100	0.988945100259462	0.000293678539616821		mean
+nonnull	EUR + ASN, 70:30	mix_w0.5	top10_pct_ASN	100	88.0259259259259	0.210572227863143		mean
+nonnull	EUR + ASN, 70:30	mix_w0.5	cor_ASN	100	0.985857674373745	0.000377686378158486		mean
+nonnull	EUR + ASN, 70:30	mix_w0.5	r2_EUR	100	0.588113746036916	0.00508566307541592		mean
+nonnull	EUR + ASN, 70:30	mix_w0.5	r2_ASN	100	0.577902797100115	0.00506044527887416		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.5	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.5	d_null_var_EUR	100	0.487818627728731	1.66214942049324		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.5	d_null_var_ASN	100	-2.73604379736276	1.62040130565912		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.5	d_top10_EUR	100	-1.90927021696252	0.131339340673585		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.5	d_top10_ASN	100	-2.68888888888889	0.201050296742877		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.5	d_cor_x1000_EUR	100	-3.57019437609286	0.165014155848544		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.5	d_cor_x1000_ASN	100	-5.30369227497538	0.29021633398374		mean
+null	EUR + ASN, 70:30	mix_w0.4	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.4	ld_fit_excess	100	0.0784121595877155	0.000559219096450354		mean
+null	EUR + ASN, 70:30	mix_w0.4	null_var_pct_EUR	100	0.269894686123529	1.15660886847432		log_pct
+null	EUR + ASN, 70:30	mix_w0.4	null_var_pct_ASN	100	-4.07285155928638	1.12835451848584		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.4	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.4	top10_pct_EUR	100	88.585798816568	0.194806090004559		mean
+nonnull	EUR + ASN, 70:30	mix_w0.4	cor_EUR	100	0.987309653668425	0.000335573521334479		mean
+nonnull	EUR + ASN, 70:30	mix_w0.4	top10_pct_ASN	100	87.2444444444445	0.234852447178639		mean
+nonnull	EUR + ASN, 70:30	mix_w0.4	cor_ASN	100	0.984003495226723	0.000419059260823587		mean
+nonnull	EUR + ASN, 70:30	mix_w0.4	r2_EUR	100	0.585421720877375	0.00509847101484345		mean
+nonnull	EUR + ASN, 70:30	mix_w0.4	r2_ASN	100	0.57592802200249	0.00507447898839908		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.4	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.4	d_null_var_EUR	100	-0.206400090875403	1.67520219669748		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.4	d_null_var_ASN	100	-4.63362030296984	1.60606486584038		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.4	d_top10_EUR	100	-2.767258382643	0.1347237594916		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.4	d_top10_ASN	100	-3.47037037037037	0.205483501188067		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.4	d_cor_x1000_EUR	100	-5.20564096712936	0.218213026749683		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.4	d_cor_x1000_ASN	100	-7.15787142199759	0.302910987865483		mean
+null	EUR + ASN, 70:30	mix_w0.3	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.3	ld_fit_excess	100	0.137199270010266	0.000805730105156863		mean
+null	EUR + ASN, 70:30	mix_w0.3	null_var_pct_EUR	100	3.37220045365028	1.16403980149316		log_pct
+null	EUR + ASN, 70:30	mix_w0.3	null_var_pct_ASN	100	-1.63464327373476	1.12873466492889		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.3	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.3	top10_pct_EUR	100	87.5976331360947	0.200817843004471		mean
+nonnull	EUR + ASN, 70:30	mix_w0.3	cor_EUR	100	0.98510958271201	0.000377598868244336		mean
+nonnull	EUR + ASN, 70:30	mix_w0.3	top10_pct_ASN	100	86.4962962962963	0.235329851138628		mean
+nonnull	EUR + ASN, 70:30	mix_w0.3	cor_ASN	100	0.981851893060794	0.000437695636821172		mean
+nonnull	EUR + ASN, 70:30	mix_w0.3	r2_EUR	100	0.582093051208804	0.0052586225761919		mean
+nonnull	EUR + ASN, 70:30	mix_w0.3	r2_ASN	100	0.572403028868272	0.00511755367258003		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.3	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.3	d_null_var_EUR	100	2.8811693289335	1.69571366078779		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.3	d_null_var_ASN	100	-2.20966523998714	1.60232682846516		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.3	d_top10_EUR	100	-3.75542406311636	0.151175240582764		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.3	d_top10_ASN	100	-4.21851851851852	0.23926972951879		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.3	d_cor_x1000_EUR	100	-7.40571192354484	0.28023253704398		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.3	d_cor_x1000_ASN	100	-9.30947358792677	0.370112892082343		mean
+null	EUR + ASN, 70:30	mix_w0.2	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.2	ld_fit_excess	100	0.239398865591997	0.0012337491809571		mean
+null	EUR + ASN, 70:30	mix_w0.2	null_var_pct_EUR	100	5.63117782513451	1.42409573869927		log_pct
+null	EUR + ASN, 70:30	mix_w0.2	null_var_pct_ASN	100	-0.551001008158725	1.33791377403171		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.2	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.2	top10_pct_EUR	100	86.3333333333333	0.241115933456817		mean
+nonnull	EUR + ASN, 70:30	mix_w0.2	cor_EUR	100	0.98116928977635	0.000538750954457509		mean
+nonnull	EUR + ASN, 70:30	mix_w0.2	top10_pct_ASN	100	85.2444444444445	0.281855344684484		mean
+nonnull	EUR + ASN, 70:30	mix_w0.2	cor_ASN	100	0.978111865773108	0.000565009702171824		mean
+nonnull	EUR + ASN, 70:30	mix_w0.2	r2_EUR	100	0.57648388275777	0.00541340425139266		mean
+nonnull	EUR + ASN, 70:30	mix_w0.2	r2_ASN	100	0.56684073939281	0.00515011065383814		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.2	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.2	d_null_var_EUR	100	5.12941627004515	1.84925719600513		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.2	d_null_var_ASN	100	-1.13235770573323	1.71227481037003		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.2	d_top10_EUR	100	-5.01972386587771	0.206054358240826		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.2	d_top10_ASN	100	-5.47037037037037	0.281665277580656		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.2	d_cor_x1000_EUR	100	-11.3460048592051	0.463844895957613		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.2	d_cor_x1000_ASN	100	-13.0495008756129	0.479949079849647		mean
+null	EUR + ASN, 70:30	mix_w0.1	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	mix_w0.1	ld_fit_excess	100	0.477201733999018	0.0022921483233357		mean
+null	EUR + ASN, 70:30	mix_w0.1	null_var_pct_EUR	100	7.56372217760362	1.3822674915742		log_pct
+null	EUR + ASN, 70:30	mix_w0.1	null_var_pct_ASN	100	0.469320053834843	1.27669268010098		log_pct
+nonnull	EUR + ASN, 70:30	mix_w0.1	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	mix_w0.1	top10_pct_EUR	100	84.1656804733728	0.32117402973811		mean
+nonnull	EUR + ASN, 70:30	mix_w0.1	cor_EUR	100	0.975135104089279	0.000824063154006063		mean
+nonnull	EUR + ASN, 70:30	mix_w0.1	top10_pct_ASN	100	83.6703703703704	0.286263696407806		mean
+nonnull	EUR + ASN, 70:30	mix_w0.1	cor_ASN	100	0.973816208289302	0.00065531953647343		mean
+nonnull	EUR + ASN, 70:30	mix_w0.1	r2_EUR	100	0.567731946984136	0.00573541325871244		mean
+nonnull	EUR + ASN, 70:30	mix_w0.1	r2_ASN	100	0.560604912406275	0.00530024347699238		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.1	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.1	d_null_var_EUR	100	7.05278079057885	1.89296074197157		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.1	d_null_var_ASN	100	-0.118001213409324	1.76568925331832		log_pct
+seed_contrast	EUR + ASN, 70:30	mix_w0.1	d_top10_EUR	100	-7.18737672583826	0.290318240652845		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.1	d_top10_ASN	100	-7.04444444444445	0.28426664695114		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.1	d_cor_x1000_EUR	100	-17.3801905462758	0.795219345491222		mean
+seed_contrast	EUR + ASN, 70:30	mix_w0.1	d_cor_x1000_ASN	100	-17.3451583594186	0.594815214041945		mean
+null	EUR + ASN, 70:30	single_ASN	replicates	0	NA	NA	100	mean
+null	EUR + ASN, 70:30	single_ASN	ld_fit_excess	100	3.26101740000027	0.0241937043953909		mean
+null	EUR + ASN, 70:30	single_ASN	null_var_pct_EUR	100	10.5256827214118	1.59597425303001		log_pct
+null	EUR + ASN, 70:30	single_ASN	null_var_pct_ASN	100	2.4956990876986	1.47464036480594		log_pct
+nonnull	EUR + ASN, 70:30	single_ASN	replicates	0	NA	NA	100	mean
+nonnull	EUR + ASN, 70:30	single_ASN	top10_pct_EUR	100	80.5483234714004	0.44355142873018		mean
+nonnull	EUR + ASN, 70:30	single_ASN	cor_EUR	100	0.961736815321675	0.00163823290286466		mean
+nonnull	EUR + ASN, 70:30	single_ASN	top10_pct_ASN	100	81.562962962963	0.326914970446758		mean
+nonnull	EUR + ASN, 70:30	single_ASN	cor_ASN	100	0.965877648869884	0.000918001779831981		mean
+nonnull	EUR + ASN, 70:30	single_ASN	r2_EUR	100	0.549932458759873	0.00617425263434083		mean
+nonnull	EUR + ASN, 70:30	single_ASN	r2_ASN	100	0.54940800247316	0.00531154313320945		mean
+seed_contrast	EUR + ASN, 70:30	single_ASN	pairs	0	NA	NA	100 / 100	mean
+seed_contrast	EUR + ASN, 70:30	single_ASN	d_null_var_EUR	100	10.0006716443658	1.93140739929187		log_pct
+seed_contrast	EUR + ASN, 70:30	single_ASN	d_null_var_ASN	100	1.8965320599631	1.74759087355766		log_pct
+seed_contrast	EUR + ASN, 70:30	single_ASN	d_top10_EUR	100	-10.8047337278106	0.422049391987786		mean
+seed_contrast	EUR + ASN, 70:30	single_ASN	d_top10_ASN	100	-9.15185185185185	0.322765301251301		mean
+seed_contrast	EUR + ASN, 70:30	single_ASN	d_cor_x1000_EUR	100	-30.7784793138791	1.616342827899		mean
+seed_contrast	EUR + ASN, 70:30	single_ASN	d_cor_x1000_ASN	100	-25.283717778837	0.855194156686553		mean

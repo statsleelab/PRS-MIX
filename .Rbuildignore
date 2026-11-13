@@ -6,3 +6,4 @@
 ^pkgdown$
 ^src/Makevars$
 
+^paper$
