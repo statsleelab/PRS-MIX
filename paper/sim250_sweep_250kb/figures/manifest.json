@@ -1,0 +1,118 @@
+{
+  "study": "figures",
+  "program": "inst/scripts/null_sim/19_sweep_paper_figures.R",
+  "command": "Rscript inst/scripts/null_sim/19_sweep_paper_figures.R 'inst/scripts/results/sim250_sweep_100rep' 'paper/sim250_sweep_250kb/figures' 'all' 'auto' 'no'",
+  "asset_commit": "b1a4f7e6abecfbb03acf8d1e696e056dca84d1bb",
+  "program_uncommitted": false,
+  "inputs_uncommitted": false,
+  "provisional": false,
+  "experiment_commit": ["f4387a2efc7a48fa11a6497f8d535fb4f9cdff7f", "612fe1f6e86758a28717388060b28a7d8c9b6478", "2c38d4275e9dec2358c83f67a54d5142eae62765"],
+  "r_version": "R version 4.6.1 (2026-06-24)",
+  "ggplot2_version": "4.0.3",
+  "inputs": [
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_asn_w0.9_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.9/metrics/nonnull_metrics.tsv",
+      "source_commit": "f4387a2efc7a48fa11a6497f8d535fb4f9cdff7f",
+      "sha256": "c8ab188963f15dbe417d38af8a65db7444cd922224578088e0a6a34ac9eb6016"
+    },
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_asn_w0.7_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.7/metrics/nonnull_metrics.tsv",
+      "source_commit": "612fe1f6e86758a28717388060b28a7d8c9b6478",
+      "sha256": "3564226adab71ae2d9573208f1d89d129b47dffe3ffe34be73fdf14ea48fad45"
+    },
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_asn_w0.5_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_asn/w0.5/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "ae294de9b33feafab4cfa71f7e24bbe5ad62afe5f48d77947e375c00406c51a1"
+    },
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_afr_w0.9_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.9/metrics/nonnull_metrics.tsv",
+      "source_commit": "f4387a2efc7a48fa11a6497f8d535fb4f9cdff7f",
+      "sha256": "2333715dd510be13df9f25dc20672b936ae751c2f8ec5bca9f691a695136eb94"
+    },
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_afr_w0.7_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.7/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "4e1104ebaa1d01f3cd491abdbb884580951e6f129bbc458d3dae9632be2164fe"
+    },
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_afr_w0.5_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_afr/w0.5/metrics/nonnull_metrics.tsv",
+      "source_commit": "2c38d4275e9dec2358c83f67a54d5142eae62765",
+      "sha256": "6d6bc9afec5def16ab49efad3defd8d0f41d047bd8fa316f92ccd4b27f87347b"
+    },
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_sas_w0.9_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.9/metrics/nonnull_metrics.tsv",
+      "source_commit": "f4387a2efc7a48fa11a6497f8d535fb4f9cdff7f",
+      "sha256": "e1e0e52de48515e5aaf37effaaa59cbcf43f38cd0ebb3f532e8bdd5eb8858db1"
+    },
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_sas_w0.7_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.7/metrics/nonnull_metrics.tsv",
+      "source_commit": "f4387a2efc7a48fa11a6497f8d535fb4f9cdff7f",
+      "sha256": "5fdcfd51162f90c5d72309d8294ed23cac813fa265533b885f488e3488b53fda"
+    },
+    {
+      "path": "paper/sim250_sweep_250kb/figures/inputs/eur_sas_w0.5_nonnull_metrics.tsv",
+      "source": "inst/scripts/results/sim250_sweep_100rep/eur_sas/w0.5/metrics/nonnull_metrics.tsv",
+      "source_commit": "f4387a2efc7a48fa11a6497f8d535fb4f9cdff7f",
+      "sha256": "159746a1fcb21e0365bf5e908ff3c4574a675cc812009aecf3f83839641b612f"
+    }
+  ],
+  "outputs": {
+    "fig_png": {
+      "path": "paper/sim250_sweep_250kb/figures/fig_top10_overlap_eur.png",
+      "sha256": "b11b69c6cd148bc769bdc65b9a9e69aa0764c39ecb3f9c5815a262c41c46b97f"
+    },
+    "fig_pdf": {
+      "path": "paper/sim250_sweep_250kb/figures/fig_top10_overlap_eur.pdf",
+      "sha256": "c11b3e0e566313a9cccad3604181c237d367a5dca24da8081db7522617b97d4e"
+    },
+    "figure_data": {
+      "path": "paper/sim250_sweep_250kb/figures/figure_data.tsv",
+      "sha256": "4d8170a6123a3b3b816c85ebbd3f60d19959a05f2c673db247507d0c0c7f8171"
+    }
+  },
+  "settings": {
+    "chromosome": 22,
+    "block_layout": "fixed 250 kb",
+    "pairs": [
+      [
+        "EUR",
+        "ASN"
+      ],
+      [
+        "EUR",
+        "AFR"
+      ],
+      [
+        "EUR",
+        "SAS"
+      ]
+    ],
+    "compositions_A": [0.9, 0.7, 0.5],
+    "replicates_used": {
+      "EUR + ASN, 90:10": 100,
+      "EUR + ASN, 70:30": 100,
+      "EUR + ASN, 50:50": 100,
+      "EUR + AFR, 90:10": 100,
+      "EUR + AFR, 70:30": 100,
+      "EUR + AFR, 50:50": 100,
+      "EUR + SAS, 90:10": 100,
+      "EUR + SAS, 70:30": 100,
+      "EUR + SAS, 50:50": 100
+    },
+    "replicate_filter": "all",
+    "phi_mode": "auto",
+    "overlap": "top10_EUR_<target> of 07_metrics_nonnull.R: share of a run's top 10% of target scores also in the EUR panel run's top 10%",
+    "rerun": "single_EUR_seed2: the EUR panel with sampler seed 2000 + rep (all other arms use 1000 + rep)",
+    "prs_mix": "mix_w<w> at the generating composition w"
+  },
+  "notes": "Experiment runs were made on RedHawk with the null-simulation job scripts (cluster/jobs/null_sim, not version-controlled)."
+}
