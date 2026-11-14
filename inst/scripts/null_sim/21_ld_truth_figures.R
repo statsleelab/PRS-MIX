@@ -18,9 +18,12 @@
 #   manifest.json         program, command, commits, input and output sha256
 #
 # Usage (from the PRS-MIX root):
-#   Rscript inst/scripts/null_sim/21_ld_truth_figures.R <extract_dir> <out_dir> <block> [pairs=eur_asn,eur_afr,eur_sas]
+#   Rscript inst/scripts/null_sim/21_ld_truth_figures.R <extract_dir> <out_dir> <block> [pairs=eur_asn,eur_afr,eur_sas] [footnote=yes]
 #
 #   <extract_dir> may be <out_dir>/inputs itself (then the files are not copied).
+#   footnote=no leaves out the figure's footnote (block, sample sizes, mean
+#   |difference| values), for the paper, whose caption and macros carry them;
+#   block_summary.tsv still has every value.
 #
 # These figures use no PRS-CS output and no replicate: the true LD comes from
 # the discovery genotypes and the candidates from the reference panels.
@@ -29,11 +32,12 @@ script_dir <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), v
 source(file.path(script_dir, "common.R"))
 suppressPackageStartupMessages(library(ggplot2))
 grDevices::pdf(NULL)  # keep ggplot from opening a default device (Rplots.pdf) in the working directory
-args <- ns_args("Rscript 21_ld_truth_figures.R <extract_dir> <out_dir> <block> [pairs=eur_asn,eur_afr,eur_sas]", 3)
+args <- ns_args("Rscript 21_ld_truth_figures.R <extract_dir> <out_dir> <block> [pairs=eur_asn,eur_afr,eur_sas] [footnote=yes]", 3)
 extract_dir <- args[[1]]
 out_dir <- args[[2]]
 block <- as.integer(args[[3]])
 pairs <- strsplit(ns_arg(args, 4, "eur_asn,eur_afr,eur_sas"), ",")[[1]]
+footnote <- ns_arg(args, 5, "yes") == "yes"
 program <- "inst/scripts/null_sim/21_ld_truth_figures.R"
 dir.create(file.path(out_dir, "inputs"), recursive = TRUE, showWarnings = FALSE)
 to_paper <- grepl("(^|/)paper/", normalizePath(out_dir))
@@ -114,7 +118,7 @@ for (p in pairs) {
     scale_fill_gradient2(low = "#104281", mid = "#f0efec", high = "#a3201b", midpoint = 0, limits = c(-1, 1),
                          breaks = c(-1, -0.5, 0, 0.5, 1), oob = scales::squish, name = expression("LD " * italic(r))) +
     scale_y_reverse(expand = c(0, 0)) + scale_x_continuous(expand = c(0, 0)) + coord_fixed() +
-    labs(title = sprintf("%s + %s", A, B), caption = paste0(
+    labs(title = sprintf("%s + %s", A, B), caption = if (footnote) paste0(
       sprintf("Null simulation, chr22, 250 kb blocks: block %d (%.2f-%.2f Mb, %d SNPs). True GWAS LD: w x %s + (1 - w) x %s from the discovery cohorts\n",
               block, s$bp_start[1] / 1e6, s$bp_end[1] / 1e6, mt$n, A, B),
       sprintf("(n %d / %d), the LD the null z-scores were simulated with. PRS-MIX LD: the same blend of the reference panels; %s panel LD: standard PRS-CS.\n",
@@ -132,9 +136,10 @@ for (p in pairs) {
           plot.caption = element_text(hjust = 0, colour = muted, size = 6.5, margin = margin(t = 8)),
           plot.margin = margin(8, 8, 8, 8))
   stem <- sprintf("fig_ld_truth_%s_block%d", p, block)
-  ggsave(file.path(out_dir, paste0(stem, ".png")), fig, width = 22, height = 14.5, units = "cm", dpi = 300, bg = "white",
+  height <- if (footnote) 14.5 else 11.5  # cm; the heatmaps keep their size without the footnote
+  ggsave(file.path(out_dir, paste0(stem, ".png")), fig, width = 22, height = height, units = "cm", dpi = 300, bg = "white",
          device = ragg::agg_png)
-  ggsave(file.path(out_dir, paste0(stem, ".pdf")), fig, width = 22, height = 14.5, units = "cm", device = grDevices::pdf,
+  ggsave(file.path(out_dir, paste0(stem, ".pdf")), fig, width = 22, height = height, units = "cm", device = grDevices::pdf,
          useDingbats = FALSE)
   out_files[[paste0(p, "_png")]] <- paste0(stem, ".png")
   out_files[[paste0(p, "_pdf")]] <- paste0(stem, ".pdf")
@@ -152,7 +157,7 @@ manifest <- list(
   inputs = unname(lapply(inputs, function(x) x[c("path", "source", "source_commit", "sha256")])),
   outputs = outputs,
   settings = list(
-    chromosome = 22, block_layout = "fixed 250 kb", block = block, pairs = pairs, compositions_A = ws,
+    chromosome = 22, block_layout = "fixed 250 kb", block = block, pairs = pairs, compositions_A = ws, footnote = footnote,
     true_ld = "w R_A,disc + (1 - w) R_B,disc, R_k,disc = Z_k'Z_k / n_k on the discovery individuals (04_simulate_null.R)",
     prs_mix = "w R_A,panel + (1 - w) R_B,panel from the reference-set panels",
     summary = "mean |true - candidate| over off-diagonal SNP pairs of the block"),
